@@ -1,0 +1,24 @@
+# Build directory
+build/
+
+# Derived Data
+DerivedData/
+
+# User-specific files
+*.xcuserstate
+*.xcuserdata/
+
+# Xcode user data
+*.moved-aside
+*.xcworkspace
+
+# Archives
+*.xcarchive
+
+# log
+*.log
+
+# Temporary files
+*~
+*.swp
+.DS_Store
