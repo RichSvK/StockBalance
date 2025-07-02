@@ -2,12 +2,12 @@ import Charts
 import SwiftUI
 
 struct StockBalanceView: View {
-    @StateObject var viewModel: StockBalanceViewModel = StockBalanceViewModel()
+    @State var viewModel: StockBalanceViewModel = StockBalanceViewModel()
     @FocusState var isFocused: Field?
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
+            VStack(spacing: 10) {
                 HStack {
                     TextField("Stock Code", text: $viewModel.stock)
                         .textFieldStyle(.roundedBorder)
@@ -15,6 +15,7 @@ struct StockBalanceView: View {
                     
                     Button(action: {
                         viewModel.fetchStockBalance()
+                        isFocused = nil
                     }){
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.white)
@@ -86,6 +87,11 @@ struct StockBalanceView: View {
         }
         .onTapGesture {
             isFocused = nil
+        }
+        .alert("Notice", isPresented: $viewModel.showAlert) {
+            Button("Close", role: .cancel) { }
+        } message: {
+            Text(viewModel.alertMessage)
         }
     }
 }

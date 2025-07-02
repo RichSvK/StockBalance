@@ -2,7 +2,10 @@ import Foundation
 
 /// Singleton of NetworkManager
 final class NetworkManager {
+    /// The shared instance is a static property of NetworkManager class not instance
     static let shared = NetworkManager()
+    
+    /// Private initializer to prevent external instantiation
     private init() {}
 
     /// Perform a GET request to a given URL and decode the response into the specified Codable type.
@@ -12,30 +15,37 @@ final class NetworkManager {
             return
         }
 
+        /// Sends the request
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            /// Handles any request error
             if let error = error {
                 completion(.failure(error))
                 return
             }
 
+            /// Validates that response data exists
             guard let data = data else {
                 completion(.failure(NetworkError.noData))
                 return
             }
 
+            /// Attempts to decode the JSON response
             do {
                 let decoder = JSONDecoder()
+                
+                /// Decodes date fields using ISO 8601 format like "2024-06-24T15:00:00Z"
                 decoder.dateDecodingStrategy = .iso8601
 
                 let decodedResponse = try decoder.decode(T.self, from: data)
-                print("Success")
                 completion(.success(decodedResponse))
+                print("Success")
             } catch {
                 completion(.failure(error))
                 print("Failure: \(error.localizedDescription)")
             }
         }
-
+        
+        /// Starts the data task
         task.resume()
     }
 
