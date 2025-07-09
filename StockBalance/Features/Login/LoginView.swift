@@ -1,0 +1,94 @@
+import SwiftUI
+
+struct LoginView: View{
+    @StateObject var viewModel: LoginViewModel = LoginViewModel()
+    
+    enum LoginField {
+        case email
+        case password
+    }
+        
+    @FocusState var isFocused: LoginField?
+    @State var isPasswordVisible: Bool = false
+    
+    var body: some View{
+        VStack{
+            HStack{
+                Image(systemName: "xmark")
+                    .foregroundColor(.red)
+                    .onTapGesture {
+                        viewModel.closeLogin()
+                    }
+                Spacer()
+            }
+            Text("Login")
+                .font(.headline)
+                .padding()
+            
+            TextField("email", text: $viewModel.email)
+                .focused($isFocused, equals: .email)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.emailAddress)
+                .padding()
+                .background(Color.secondary.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            
+            HStack {
+                Group {
+                    if isPasswordVisible {
+                        TextField("Password", text: $viewModel.password)
+                    } else {
+                        SecureField("Password", text: $viewModel.password)
+                    }
+                }
+                .focused($isFocused, equals: .password)
+                .textInputAutocapitalization(.never)
+                .padding()
+                .background(Color.secondary.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button(action: {
+                    isPasswordVisible.toggle()
+                }) {
+                    Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.top, 5)
+            
+            Button(action:{
+                viewModel.login()
+            }, label:{
+                Text("Login")
+                    .foregroundStyle(Color.white)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(10)
+                    .padding(.top)
+            })
+            
+            Button(action:{
+                viewModel.showRegister = true
+            }, label:{
+                Text("Register Account")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+            })
+            
+            Spacer()
+        }
+        .padding()
+        .fullScreenCover(isPresented: $viewModel.showRegister){
+            RegisterView(isPresented: $viewModel.showRegister)
+        }
+        .alert("Notice", isPresented: $viewModel.showAlert) {
+            Button("Close", role: .cancel) { }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
+    }
+}
+
+#Preview{
+    LoginView()
+}

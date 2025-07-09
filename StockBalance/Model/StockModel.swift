@@ -58,4 +58,5 @@ struct StockSeries: Identifiable {
     let date: Date
     let value: UInt64
     let category: String
+    let investorType: Int
 }

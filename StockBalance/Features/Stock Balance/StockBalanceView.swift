@@ -2,7 +2,13 @@ import Charts
 import SwiftUI
 
 struct StockBalanceView: View {
-    @State var viewModel: StockBalanceViewModel = StockBalanceViewModel()
+    @StateObject var viewModel: StockBalanceViewModel
+    
+    enum Field {
+        case name
+        case ipAddress
+    }
+    
     @FocusState var isFocused: Field?
     
     var body: some View {
@@ -59,29 +65,35 @@ struct StockBalanceView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 
-                Chart {
-                    if viewModel.chartType == "Line" {
-                        ForEach(viewModel.flattenedSeries) { item in
-                            LineMark(
-                                x: .value("Date", item.date),
-                                y: .value("Value", item.value),
-                                series: .value("Category", item.category)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(by: .value("Category", item.category))
-                        }
-                    } else if viewModel.chartType == "Bar" {
-                        ForEach(viewModel.flattenedSeries) { item in
-                            BarMark(
-                                x: .value("Date", item.date),
-                                y: .value("Value", item.value)
-                            )
-                            .foregroundStyle(by: .value("Holding Category", item.category))
+                if viewModel.flattenedSeries.isEmpty {
+                    Text("No data available")
+                        .foregroundColor(.secondary)
+                        .frame(height: 400)
+                } else{
+                    Chart {
+                        if viewModel.chartType == "Line" {
+                            ForEach(viewModel.flattenedSeries) { item in
+                                LineMark(
+                                    x: .value("Date", item.date),
+                                    y: .value("Value", item.value),
+                                    series: .value("Category", item.category)
+                                )
+                                .interpolationMethod(.monotone)
+                                .foregroundStyle(by: .value("Category", item.category))
+                            }
+                        } else if viewModel.chartType == "Bar" {
+                            ForEach(viewModel.flattenedSeries) { item in
+                                BarMark(
+                                    x: .value("Date", item.date),
+                                    y: .value("Value", item.value)
+                                )
+                                .foregroundStyle(by: .value("Holding Category", item.category))
+                            }
                         }
                     }
+                    .frame(height: 400)
+                    .padding(.horizontal)
                 }
-                .frame(height: 400)
-                .padding(.horizontal)
             }
             .padding(.vertical)
         }
@@ -94,8 +106,4 @@ struct StockBalanceView: View {
             Text(viewModel.alertMessage)
         }
     }
-}
-
-#Preview {
-    StockBalanceView()
 }

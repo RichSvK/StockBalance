@@ -1,4 +1,5 @@
-import Foundation
+import SwiftUI
+//import Foundation
 
 /// Singleton of NetworkManager
 final class NetworkManager {
@@ -6,17 +7,24 @@ final class NetworkManager {
     static let shared = NetworkManager()
     
     /// Private initializer to prevent external instantiation
-    private init() {}
-
+    private init(session: SessionManager = SessionManager.shared) {
+        self.session = session
+    }
+    
+    private let session: SessionManager
+        
     /// Perform a GET request to a given URL and decode the response into the specified Codable type.
     func fetch<T: Decodable>(from urlString: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
         guard let url = URL(string: urlString) else {
             completion(.failure(NetworkError.invalidURL))
             return
         }
-
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(self.session.token)", forHTTPHeaderField: "Authorization")
         /// Sends the request
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
             /// Handles any request error
             if let error = error {
                 completion(.failure(error))
@@ -59,6 +67,7 @@ final class NetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(self.session.token)", forHTTPHeaderField: "Authorization")
 
         do {
             request.httpBody = try JSONEncoder().encode(body)
@@ -87,5 +96,9 @@ final class NetworkManager {
         }
 
         task.resume()
+    }
+    
+    func setToken(_ token: String) {
+        self.session.token = token
     }
 }
