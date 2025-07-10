@@ -10,6 +10,18 @@ struct ContentView: View {
                     Image(systemName: "house")
                     Text("Home")
                 }
+            
+            ScriptlessChangeView(viewModel: ScriptlessChangeViewModel())
+                .tabItem{
+                    Image(systemName: "pencil")
+                    Text("Scriptless")
+                }
+            
+            ProfileView()
+                .tabItem{
+                    Image(systemName: "person.circle")
+                    Text("Profile")
+                }
         }
         .fullScreenCover(isPresented: $session.showLogin) {
             LoginView()

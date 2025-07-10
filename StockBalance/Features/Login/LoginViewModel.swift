@@ -17,7 +17,7 @@ class LoginViewModel: ObservableObject{
         let request: LoginRequest = LoginRequest(email: self.email, password: self.password)
         print(request)
         
-        NetworkManager.shared.post(to: "http://10.60.54.8:8888/users/login", body: request, responseType: LoginResponse.self){ result in
+        NetworkManager.shared.post(to: "http://localhost:8888/users/login", body: request, responseType: LoginResponse.self){ result in
             DispatchQueue.main.async{
                 switch result {
                     case .success(let response):

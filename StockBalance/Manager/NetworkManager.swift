@@ -1,5 +1,4 @@
-import SwiftUI
-//import Foundation
+import Foundation
 
 /// Singleton of NetworkManager
 final class NetworkManager {
@@ -22,7 +21,10 @@ final class NetworkManager {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.addValue("Bearer \(self.session.token)", forHTTPHeaderField: "Authorization")
+
+        let token: String = self.sessoin.token == "" ? "" : "Bearer \(self.session.token)"
+        request.addValue(token, forHTTPHeaderField: "Authorization")
+
         /// Sends the request
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             /// Handles any request error
