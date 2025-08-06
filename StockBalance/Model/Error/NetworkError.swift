@@ -6,8 +6,8 @@ enum NetworkError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-            case .invalidURL: return "URL tidak valid."
-            case .noData: return "Tidak ada data dari server."
+            case .invalidURL: return "Invalid URL"
+            case .noData: return "No data in server."
         }
     }
 }

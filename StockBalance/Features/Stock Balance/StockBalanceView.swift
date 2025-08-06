@@ -14,10 +14,20 @@ struct StockBalanceView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
+                Text("Stock Balance")
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                TextField("Stock Code", text: $viewModel.stock)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isFocused, equals: .name)
+                
+        
+                /// For local use only: insert the IP address and port of the device running the backend.
                 HStack {
-                    TextField("Stock Code", text: $viewModel.stock)
+                    TextField("ex: 192.168.1.100:8080", text: $viewModel.ip)
                         .textFieldStyle(.roundedBorder)
-                        .focused($isFocused, equals: .name)
+                        .focused($isFocused, equals: .ipAddress)
                     
                     Button(action: {
                         viewModel.fetchStockBalance()
@@ -30,25 +40,11 @@ struct StockBalanceView: View {
                             .cornerRadius(10)
                     }
                 }
-                .padding(.horizontal)
-        
-                /// For local use only: insert the IP address and port of the device running the backend.
-                HStack {
-                    TextField("ex: 192.168.1.100:8080", text: $viewModel.ip)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isFocused, equals: .ipAddress)
-                    
-                    Button(action: {
-                        viewModel.fetchStockBalance()
-                    }){
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(Color("ColorSearchButton"))
-                            .cornerRadius(10)
-                    }
-                }
-                .padding(.horizontal)
+                .padding(.bottom, 16)
+                
+                Text("Shareholder Composition")
+                    .font(.headline)
+                    .padding(.horizontal)
                 
                 Picker("Chart Type", selection: $viewModel.investorType) {
                     Text("All").tag("All")
@@ -56,14 +52,7 @@ struct StockBalanceView: View {
                     Text("Foreign").tag("Foreign")
                 }
                 .pickerStyle(.segmented)
-                .padding(.horizontal)
-                
-                Picker("Chart Type", selection: $viewModel.chartType) {
-                    Text("Line").tag("Line")
-                    Text("Bar").tag("Bar")
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
+                .padding(.bottom, 16)
                 
                 if viewModel.flattenedSeries.isEmpty {
                     Text("No data available")
@@ -71,31 +60,31 @@ struct StockBalanceView: View {
                         .frame(height: 400)
                 } else{
                     Chart {
-                        if viewModel.chartType == "Line" {
-                            ForEach(viewModel.flattenedSeries) { item in
-                                LineMark(
-                                    x: .value("Date", item.date),
-                                    y: .value("Value", item.value),
-                                    series: .value("Category", item.category)
-                                )
-                                .interpolationMethod(.monotone)
-                                .foregroundStyle(by: .value("Category", item.category))
-                            }
-                        } else if viewModel.chartType == "Bar" {
-                            ForEach(viewModel.flattenedSeries) { item in
-                                BarMark(
-                                    x: .value("Date", item.date),
-                                    y: .value("Value", item.value)
-                                )
-                                .foregroundStyle(by: .value("Holding Category", item.category))
-                            }
+                        ForEach(viewModel.flattenedSeries) { item in
+                            LineMark(
+                                x: .value("Date", item.date),
+                                y: .value("Value", item.value),
+                                series: .value("Category", item.category)
+                            )
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(by: .value("Category", item.category))
                         }
                     }
                     .frame(height: 400)
-                    .padding(.horizontal)
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { value in
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel() {
+                                if let doubleValue = value.as(Double.self) {
+                                    Text(String(format: "%.0f%%", doubleValue))
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            .padding(.vertical)
+            .padding()
         }
         .onTapGesture {
             isFocused = nil

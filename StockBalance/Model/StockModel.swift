@@ -56,7 +56,7 @@ struct StockBalance: Decodable {
 struct StockSeries: Identifiable {
     let id = UUID()
     let date: Date
-    let value: UInt64
+    let value: Double
     let category: String
     let investorType: Int
 }

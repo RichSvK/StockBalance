@@ -15,16 +15,16 @@ class LoginViewModel: ObservableObject{
     
     func login(){
         let request: LoginRequest = LoginRequest(email: self.email, password: self.password)
-        print(request)
         
-        NetworkManager.shared.post(to: "http://localhost:8888/users/login", body: request, responseType: LoginResponse.self){ result in
+        let url: String = "http://10.60.51.187:8888/api/user/login"
+        NetworkManager.shared.post(to: url, body: request, responseType: LoginResponse.self){ result in
             DispatchQueue.main.async{
                 switch result {
                     case .success(let response):
                         if response.message == "Login Success"{
                             if let loginData = response.data{
                                 NetworkManager.shared.setToken(loginData.token)
-                                self.session.showLogin = false
+                                self.session.getUserProfile()
                             }
                             return
                         }
@@ -39,9 +39,5 @@ class LoginViewModel: ObservableObject{
                 }
             }
         }
-    }
-    
-    func closeLogin(){
-        self.session.showLogin = false
     }
 }

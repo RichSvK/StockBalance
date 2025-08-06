@@ -12,15 +12,7 @@ struct LoginView: View{
     @State var isPasswordVisible: Bool = false
     
     var body: some View{
-        VStack{
-            HStack{
-                Image(systemName: "xmark")
-                    .foregroundColor(.red)
-                    .onTapGesture {
-                        viewModel.closeLogin()
-                    }
-                Spacer()
-            }
+        VStack{            
             Text("Login")
                 .font(.headline)
                 .padding()

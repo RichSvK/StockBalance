@@ -22,7 +22,7 @@ final class NetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        let token: String = self.sessoin.token == "" ? "" : "Bearer \(self.session.token)"
+        let token: String = self.session.token == "" ? "" : "Bearer \(self.session.token)"
         request.addValue(token, forHTTPHeaderField: "Authorization")
 
         /// Sends the request

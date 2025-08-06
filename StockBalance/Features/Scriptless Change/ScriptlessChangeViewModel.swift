@@ -29,8 +29,7 @@ class ScriptlessChangeViewModel: ObservableObject {
         let startTime: String = String(prevTwoYear) + "-" + String(format: "%02d", prevTwoMonth) + "-01"
         let endTime: String = String(prevYear) + "-" + String(format: "%02d", prevMonth) + "-01"
         
-        let url: String = "http://127.0.0.1:3000/balance/scriptless?start_time=\(startTime)&end_time=\(endTime)"
-        print("Test")
+        let url: String = "http://10.60.51.187:8080/balance/scriptless?start_time=\(startTime)&end_time=\(endTime)"
         NetworkManager.shared.fetch(from: url, responseType: ScriptlessChangeResponse.self){ result in
             DispatchQueue.main.async{
                 switch result {

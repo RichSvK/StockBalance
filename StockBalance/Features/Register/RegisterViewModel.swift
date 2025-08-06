@@ -12,7 +12,7 @@ class RegisterViewModel: ObservableObject {
     func register() {
         let requestBody: RegisterRequest = RegisterRequest(email: self.email, password: self.password, username: self.username)
         
-        NetworkManager.shared.post(to: "http://localhost:8888/users/register", body: requestBody, responseType: RegisterResponse.self){ result in
+        NetworkManager.shared.post(to: "http://10.60.51.187:8888/users/register", body: requestBody, responseType: RegisterResponse.self){ result in
             DispatchQueue.main.async {
                 switch(result) {
                     case .success(let response):

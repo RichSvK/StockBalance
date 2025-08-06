@@ -80,7 +80,7 @@ struct RegisterView: View {
             Spacer()
         }
         .padding()
-        .onChange(of: viewModel.registrationSuccess) {
+        .onChange(of: viewModel.registrationSuccess) { item in
             if viewModel.registrationSuccess {
                 isPresented = false
             }

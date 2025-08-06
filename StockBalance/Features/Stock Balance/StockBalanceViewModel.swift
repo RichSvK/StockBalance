@@ -2,9 +2,8 @@ import SwiftUI
 
 class StockBalanceViewModel: ObservableObject {
     var stock: String = "BBCA"
-    var ip: String = "127.0.0.1:8080"
+    var ip: String = "10.60.51.187:8080"
     
-    @Published var chartType: String = "Line"
     @Published var investorType: String = "All" {
         didSet {
             filterBalance()
@@ -27,18 +26,18 @@ class StockBalanceViewModel: ObservableObject {
 
     private func filterBalance() {
         switch investorType {
-        case "All":
-            self.filteredBalance = stockBalance.flatMap {
-                extractSeries(from: $0, includeSummary: true)
-            }
-            self.flattenedSeries = self.filteredBalance
+            case "All":
+                self.filteredBalance = stockBalance.flatMap {
+                    extractSeries(from: $0, includeSummary: true)
+                }
+                self.flattenedSeries = self.filteredBalance
 
-        default:
-            self.filteredBalance = stockBalance.flatMap {
-                extractSeries(from: $0)
-            }
+            default:
+                self.filteredBalance = stockBalance.flatMap {
+                    extractSeries(from: $0)
+                }
 
-            self.flattenedSeries = self.filteredBalance.filter {$0.investorType == (self.investorType == "Domestic" ? 1 : 2)}
+                self.flattenedSeries = self.filteredBalance.filter {$0.investorType == (self.investorType == "Domestic" ? 1 : 2)}
         }
     }
 
@@ -54,19 +53,15 @@ class StockBalanceViewModel: ObservableObject {
         let url = "http://\(ip)/balance/\(stock)"
         NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { result in
             switch result {
-            case .success(let response):
-                DispatchQueue.main.async {
-                    self.stockBalance = response.data
-                    self.filterBalance()
-                }
-                print("✅ Success Load \(self.stock) Data")
+                case .success(let response):
+                    DispatchQueue.main.async {
+                        self.stockBalance = response.data
+                        self.filterBalance()
+                    }
+                    print("✅ Success Load \(self.stock) Data")
 
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self.session.showLogin = true
-                    self.session.token = ""
-                }
-                print("❌ Error: \(error.localizedDescription)")
+                case .failure(let error):
+                    print("❌ Error: \(error.localizedDescription)")
             }
         }
     }
@@ -95,7 +90,7 @@ class StockBalanceViewModel: ObservableObject {
         ]
 
         let detailed = rawSeries.compactMap { (value, type, category) -> StockSeries? in
-            value != 0 ? StockSeries(date: item.date, value: value, category: category, investorType: type) : nil
+            value != 0 ? StockSeries(date: item.date, value: Double(value) / Double(item.listedShares) * 100, category: category, investorType: type) : nil
         }
 
         if includeSummary {
@@ -103,8 +98,8 @@ class StockBalanceViewModel: ObservableObject {
             let totalForeign  = rawSeries.filter { $0.1 == 2 }.map { $0.0 }.reduce(0, +)
 
             let summary: [StockSeries] = [
-                totalDomestic > 0 ? StockSeries(date: item.date, value: totalDomestic, category: "Domestic", investorType: 1) : nil,
-                totalForeign > 0  ? StockSeries(date: item.date, value: totalForeign, category: "Foreign", investorType: 2) : nil,
+                totalDomestic > 0 ? StockSeries(date: item.date, value: Double(totalDomestic) / Double(item.listedShares) * 100, category: "Domestic", investorType: 1) : nil,
+                totalForeign > 0  ? StockSeries(date: item.date, value: Double(totalForeign) / Double(item.listedShares) * 100, category: "Foreign", investorType: 2) : nil,
             ].compactMap { $0 }
 
             return summary
