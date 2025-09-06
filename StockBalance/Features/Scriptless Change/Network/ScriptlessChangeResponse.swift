@@ -1,12 +1,12 @@
 import Foundation
 
-struct ScriptlessChangeResponse: Decodable{
+struct ScriptlessChangeResponse: Decodable {
     let code: Int
     let message: String
     let data: [ScriptlessChangeData]?
 }
 
-struct ScriptlessChangeData: Decodable, Hashable{
+struct ScriptlessChangeData: Decodable, Hashable {
     let code: String
     let firstShare: UInt64
     let secondShare: UInt64

@@ -6,14 +6,10 @@ final class NetworkManager {
     static let shared = NetworkManager()
     
     /// Private initializer to prevent external instantiation
-    private init(session: SessionManager = SessionManager.shared) {
-        self.session = session
-    }
-    
-    private let session: SessionManager
+    private init() { }
         
     /// Perform a GET request to a given URL and decode the response into the specified Codable type.
-    func fetch<T: Decodable>(from urlString: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
+    func fetch<T: Decodable>(from urlString: String, responseType: T.Type, completion: @escaping (Result<(T, Int), Error>) -> Void) {
         guard let url = URL(string: urlString) else {
             completion(.failure(NetworkError.invalidURL))
             return
@@ -21,10 +17,11 @@ final class NetworkManager {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-
-        let token: String = self.session.token == "" ? "" : "Bearer \(self.session.token)"
-        request.addValue(token, forHTTPHeaderField: "Authorization")
-
+        
+        if let token = UserDefaults.standard.string(forKey: "token"), !token.isEmpty {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
         /// Sends the request
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             /// Handles any request error
@@ -32,11 +29,21 @@ final class NetworkManager {
                 completion(.failure(error))
                 return
             }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(NetworkError.noData))
+                return
+            }
 
             /// Validates that response data exists
             guard let data = data else {
                 completion(.failure(NetworkError.noData))
                 return
+            }
+            
+            if httpResponse.statusCode == 401 {
+                UserDefaults.standard.removeObject(forKey: "token")
+                completion(.failure(NetworkError.unauthorizedError))
             }
 
             /// Attempts to decode the JSON response
@@ -47,11 +54,9 @@ final class NetworkManager {
                 decoder.dateDecodingStrategy = .iso8601
 
                 let decodedResponse = try decoder.decode(T.self, from: data)
-                completion(.success(decodedResponse))
-                print("Success")
+                completion(.success((decodedResponse, httpResponse.statusCode)))
             } catch {
                 completion(.failure(error))
-                print("Failure: \(error.localizedDescription)")
             }
         }
         
@@ -60,7 +65,7 @@ final class NetworkManager {
     }
 
     /// Perform a POST request with an Encodable body.
-    func post<T: Decodable, U: Encodable>(to urlString: String, body: U, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
+    func post<T: Decodable, U: Encodable>(to urlString: String, body: U, responseType: T.Type, completion: @escaping (Result<(T, Int), Error>) -> Void) {
         guard let url = URL(string: urlString) else {
             completion(.failure(NetworkError.invalidURL))
             return
@@ -69,7 +74,10 @@ final class NetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(self.session.token)", forHTTPHeaderField: "Authorization")
+        
+        if let token = UserDefaults.standard.string(forKey: "token"), !token.isEmpty {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         do {
             request.httpBody = try JSONEncoder().encode(body)
@@ -88,19 +96,20 @@ final class NetworkManager {
                 completion(.failure(NetworkError.noData))
                 return
             }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(NetworkError.noData))
+                return
+            }
 
             do {
                 let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                completion(.success(decodedResponse))
+                completion(.success((decodedResponse, httpResponse.statusCode)))
             } catch {
                 completion(.failure(error))
             }
         }
 
         task.resume()
-    }
-    
-    func setToken(_ token: String) {
-        self.session.token = token
     }
 }

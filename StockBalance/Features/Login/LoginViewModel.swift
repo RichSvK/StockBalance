@@ -1,41 +1,34 @@
 import Foundation
 import SwiftUI
 
-class LoginViewModel: ObservableObject{
+internal class LoginViewModel: ObservableObject {
     var email: String = ""
     var password: String = ""
     var errorMessage: String = ""
     @Published var showAlert: Bool = false
     @Published var showRegister: Bool = false
     
-    private let session: SessionManager
-    init(session: SessionManager = SessionManager.shared){
-        self.session = session
-    }
-    
-    func login(){
+    func login() {
+        let url: String = LoginEndpoint.login.path
         let request: LoginRequest = LoginRequest(email: self.email, password: self.password)
         
-        let url: String = "http://10.60.51.187:8888/api/user/login"
-        NetworkManager.shared.post(to: url, body: request, responseType: LoginResponse.self){ result in
-            DispatchQueue.main.async{
+        NetworkManager.shared.post(to: url, body: request, responseType: LoginResponse.self) { result in
+            DispatchQueue.main.async {
                 switch result {
-                    case .success(let response):
-                        if response.message == "Login Success"{
-                            if let loginData = response.data{
-                                NetworkManager.shared.setToken(loginData.token)
-                                self.session.getUserProfile()
-                            }
-                            return
-                        }
-                        print(response)
-                        self.errorMessage = response.message
+                case .success(let (response, statusCode)):
+                    guard statusCode == 200 else {
+                        self.errorMessage = "Login Failed"
                         self.showAlert = true
+                        return
+                    }
                     
-                    case .failure(let error):
-                        self.errorMessage = error.localizedDescription
-                        self.showAlert = true
-                        print("❌ Error: \(error.localizedDescription)")
+                    if let loginData = response.data {
+                        UserDefaults.standard.set(loginData.token, forKey: "token")
+                    }
+                
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    self.showAlert = true
                 }
             }
         }

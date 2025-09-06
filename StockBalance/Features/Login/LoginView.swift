@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct LoginView: View{
+struct LoginView: View {
     @StateObject var viewModel: LoginViewModel = LoginViewModel()
     
     enum LoginField {
@@ -11,8 +11,8 @@ struct LoginView: View{
     @FocusState var isFocused: LoginField?
     @State var isPasswordVisible: Bool = false
     
-    var body: some View{
-        VStack{            
+    var body: some View {
+        VStack {
             Text("Login")
                 .font(.headline)
                 .padding()
@@ -41,16 +41,16 @@ struct LoginView: View{
 
                 Button(action: {
                     isPasswordVisible.toggle()
-                }) {
+                }, label: {
                     Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
                         .foregroundColor(.gray)
-                }
+                })
             }
             .padding(.top, 5)
             
-            Button(action:{
+            Button(action: {
                 viewModel.login()
-            }, label:{
+            }, label: {
                 Text("Login")
                     .foregroundStyle(Color.white)
                     .padding()
@@ -59,9 +59,9 @@ struct LoginView: View{
                     .padding(.top)
             })
             
-            Button(action:{
+            Button(action: {
                 viewModel.showRegister = true
-            }, label:{
+            }, label: {
                 Text("Register Account")
                     .padding()
                     .frame(maxWidth: .infinity)
@@ -70,7 +70,7 @@ struct LoginView: View{
             Spacer()
         }
         .padding()
-        .fullScreenCover(isPresented: $viewModel.showRegister){
+        .fullScreenCover(isPresented: $viewModel.showRegister) {
             RegisterView(isPresented: $viewModel.showRegister)
         }
         .alert("Notice", isPresented: $viewModel.showAlert) {

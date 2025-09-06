@@ -1,17 +1,23 @@
 import SwiftUI
 
 struct ScriptlessChangeView: View {
+    @State private var selectedMonth = 1
+    @State private var selectedYear = 2025
+    
     @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel: ScriptlessChangeViewModel
     
+    let months = Calendar.current.monthSymbols
+    let years = Array(2025...2100)
+    
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false){
-            VStack{
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack {
                 Text("Scriptless Change")
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                HeaderRow()
+                headerRow()
                 
                 Rectangle()
                     .frame(height: 1.2)
@@ -20,9 +26,8 @@ struct ScriptlessChangeView: View {
                 
                 ForEach(viewModel.listStock, id: \.self) { item in
                     NavigationLink(destination: ScriptlessChangeDetailView(stock: item)) {
-                        ScriptlessDataRow(stock: item.code, change: item.changePercentage)
+                        scriptlessDataRow(stock: item.code, change: item.changePercentage)
                     }
-                    
                     
                     Rectangle()
                         .frame(height: 0.8)
@@ -34,7 +39,7 @@ struct ScriptlessChangeView: View {
         .onAppear {
             viewModel.fetchChanges()
         }
-        .alert("Notice", isPresented: $viewModel.showAlert){
+        .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }
         } message: {
             Text(viewModel.alertMessage)
@@ -42,7 +47,7 @@ struct ScriptlessChangeView: View {
         .padding()
     }
     
-    private func HeaderRow() -> some View {
+    private func headerRow() -> some View {
         HStack {
             Text("Stock")
                 .font(.body)
@@ -63,7 +68,7 @@ struct ScriptlessChangeView: View {
         .cornerRadius(10)
     }
     
-    func ScriptlessDataRow(stock: String, change: Double) -> some View {
+    func scriptlessDataRow(stock: String, change: Double) -> some View {
         HStack {
             Text(stock)
                 .font(.callout)

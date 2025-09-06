@@ -1,8 +1,7 @@
 import SwiftUI
 
-class StockBalanceViewModel: ObservableObject {
+internal class StockBalanceViewModel: ObservableObject {
     var stock: String = "BBCA"
-    var ip: String = "10.60.51.187:8080"
     
     @Published var investorType: String = "All" {
         didSet {
@@ -16,28 +15,32 @@ class StockBalanceViewModel: ObservableObject {
 
     @Published var showAlert: Bool = false
     @Published var alertMessage: String = ""
-    let session: SessionManager
 
-    init(session: SessionManager = SessionManager.shared) {
-        self.session = session
+    init() {
         fetchStockBalance()
         filterBalance()
+    }
+    
+    private struct RawSeries {
+        let value: UInt64
+        let investorType: Int
+        let category: String
     }
 
     private func filterBalance() {
         switch investorType {
-            case "All":
-                self.filteredBalance = stockBalance.flatMap {
-                    extractSeries(from: $0, includeSummary: true)
-                }
-                self.flattenedSeries = self.filteredBalance
+        case "All":
+            self.filteredBalance = stockBalance.flatMap {
+                extractSeries(from: $0, includeSummary: true)
+            }
+            self.flattenedSeries = self.filteredBalance
 
-            default:
-                self.filteredBalance = stockBalance.flatMap {
-                    extractSeries(from: $0)
-                }
+        default:
+            self.filteredBalance = stockBalance.flatMap {
+                extractSeries(from: $0)
+            }
 
-                self.flattenedSeries = self.filteredBalance.filter {$0.investorType == (self.investorType == "Domestic" ? 1 : 2)}
+            self.flattenedSeries = self.filteredBalance.filter {$0.investorType == (self.investorType == "Domestic" ? 1 : 2)}
         }
     }
 
@@ -50,56 +53,60 @@ class StockBalanceViewModel: ObservableObject {
             return
         }
 
-        let url = "http://\(ip)/balance/\(stock)"
+        let url: String = "\(BalanceEndpoint.getStockBalance.path)\(stock)"
+        
         NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { result in
             switch result {
-                case .success(let response):
-                    DispatchQueue.main.async {
-                        self.stockBalance = response.data
-                        self.filterBalance()
-                    }
-                    print("✅ Success Load \(self.stock) Data")
+            case .success(let (response, statusCode)):
+                if statusCode == 200 {
+                        DispatchQueue.main.async {
+                            self.stockBalance = response.data
+                            self.filterBalance()
+                        }
+                        print("✅ Success Load \(self.stock) Data")
+                }
 
-                case .failure(let error):
-                    print("❌ Error: \(error.localizedDescription)")
+            case .failure(let error):
+                print("❌ Error: \(error.localizedDescription)")
             }
         }
     }
     
     private func extractSeries(from item: StockBalance, includeSummary: Bool = false) -> [StockSeries] {
-        let rawSeries: [(UInt64, Int, String)] = [
-            (item.localIS, 1, "Insurance"),
-            (item.localCP, 1, "Corporate"),
-            (item.localPF, 1, "Pension Fund"),
-            (item.localIB, 1, "Bank"),
-            (item.localID, 1, "Individual"),
-            (item.localMF, 1, "Mutual Fund"),
-            (item.localSC, 1, "Securities"),
-            (item.localFD, 1, "Foundation"),
-            (item.localOT, 1, "Other"),
+        let rawSeries: [RawSeries] = [
+            RawSeries(value: item.localIS, investorType: 1, category: "Insurance"),
+            RawSeries(value: item.localCP, investorType: 1, category: "Corporate"),
+            RawSeries(value: item.localPF, investorType: 1, category: "Pension Fund"),
+            RawSeries(value: item.localIB, investorType: 1, category: "Bank"),
+            RawSeries(value: item.localID, investorType: 1, category: "Individual"),
+            RawSeries(value: item.localMF, investorType: 1, category: "Mutual Fund"),
+            RawSeries(value: item.localSC, investorType: 1, category: "Securities"),
+            RawSeries(value: item.localFD, investorType: 1, category: "Foundation"),
+            RawSeries(value: item.localOT, investorType: 1, category: "Other"),
 
-            (item.foreignIS, 2, "Insurance"),
-            (item.foreignCP, 2, "Corporate"),
-            (item.foreignPF, 2, "Pension Fund"),
-            (item.foreignIB, 2, "Bank"),
-            (item.foreignID, 2, "Individual"),
-            (item.foreignMF, 2, "Mutual Fund"),
-            (item.foreignSC, 2, "Securities"),
-            (item.foreignFD, 2, "Foundation"),
-            (item.foreignOT, 2, "Other"),
+            RawSeries(value: item.foreignIS, investorType: 2, category: "Insurance"),
+            RawSeries(value: item.foreignCP, investorType: 2, category: "Corporate"),
+            RawSeries(value: item.foreignPF, investorType: 2, category: "Pension Fund"),
+            RawSeries(value: item.foreignIB, investorType: 2, category: "Bank"),
+            RawSeries(value: item.foreignID, investorType: 2, category: "Individual"),
+            RawSeries(value: item.foreignMF, investorType: 2, category: "Mutual Fund"),
+            RawSeries(value: item.foreignSC, investorType: 2, category: "Securities"),
+            RawSeries(value: item.foreignFD, investorType: 2, category: "Foundation"),
+            RawSeries(value: item.foreignOT, investorType: 2, category: "Other")
         ]
 
-        let detailed = rawSeries.compactMap { (value, type, category) -> StockSeries? in
-            value != 0 ? StockSeries(date: item.date, value: Double(value) / Double(item.listedShares) * 100, category: category, investorType: type) : nil
+        let detailed = rawSeries.compactMap { series -> StockSeries? in
+            guard series.value != 0 else { return nil }
+            return StockSeries(date: item.date, value: Double(series.value) / Double(item.listedShares) * 100, category: series.category, investorType: series.investorType)
         }
 
         if includeSummary {
-            let totalDomestic = rawSeries.filter { $0.1 == 1 }.map { $0.0 }.reduce(0, +)
-            let totalForeign  = rawSeries.filter { $0.1 == 2 }.map { $0.0 }.reduce(0, +)
+            let totalDomestic = rawSeries.filter { $0.investorType == 1 }.map(\.value).reduce(0, +)
+            let totalForeign  = rawSeries.filter { $0.investorType == 2 }.map(\.value).reduce(0, +)
 
             let summary: [StockSeries] = [
                 totalDomestic > 0 ? StockSeries(date: item.date, value: Double(totalDomestic) / Double(item.listedShares) * 100, category: "Domestic", investorType: 1) : nil,
-                totalForeign > 0  ? StockSeries(date: item.date, value: Double(totalForeign) / Double(item.listedShares) * 100, category: "Foreign", investorType: 2) : nil,
+                totalForeign > 0  ? StockSeries(date: item.date, value: Double(totalForeign) / Double(item.listedShares) * 100, category: "Foreign", investorType: 2) : nil
             ].compactMap { $0 }
 
             return summary
@@ -107,5 +114,4 @@ class StockBalanceViewModel: ObservableObject {
 
         return detailed
     }
-
 }

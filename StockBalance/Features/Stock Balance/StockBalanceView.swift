@@ -6,7 +6,6 @@ struct StockBalanceView: View {
     
     enum Field {
         case name
-        case ipAddress
     }
     
     @FocusState var isFocused: Field?
@@ -21,26 +20,6 @@ struct StockBalanceView: View {
                 TextField("Stock Code", text: $viewModel.stock)
                     .textFieldStyle(.roundedBorder)
                     .focused($isFocused, equals: .name)
-                
-        
-                /// For local use only: insert the IP address and port of the device running the backend.
-                HStack {
-                    TextField("ex: 192.168.1.100:8080", text: $viewModel.ip)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isFocused, equals: .ipAddress)
-                    
-                    Button(action: {
-                        viewModel.fetchStockBalance()
-                        isFocused = nil
-                    }){
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(Color("ColorSearchButton"))
-                            .cornerRadius(10)
-                    }
-                }
-                .padding(.bottom, 16)
                 
                 Text("Shareholder Composition")
                     .font(.headline)
@@ -58,7 +37,7 @@ struct StockBalanceView: View {
                     Text("No data available")
                         .foregroundColor(.secondary)
                         .frame(height: 400)
-                } else{
+                } else {
                     Chart {
                         ForEach(viewModel.flattenedSeries) { item in
                             LineMark(
@@ -75,7 +54,7 @@ struct StockBalanceView: View {
                         AxisMarks(position: .leading) { value in
                             AxisGridLine()
                             AxisTick()
-                            AxisValueLabel() {
+                            AxisValueLabel {
                                 if let doubleValue = value.as(Double.self) {
                                     Text(String(format: "%.0f%%", doubleValue))
                                 }

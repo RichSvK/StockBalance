@@ -1,12 +1,12 @@
 import SwiftUI
 
-struct ScriptlessChangeDetailView: View{
+struct ScriptlessChangeDetailView: View {
     @StateObject var viewModel: ScriptlessChangeViewModel = ScriptlessChangeViewModel()
     
     var stock: ScriptlessChangeData
     
-    var body: some View{
-        VStack{
+    var body: some View {
+        VStack {
             Text(stock.code)
                 .font(.headline)
             

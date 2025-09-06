@@ -11,7 +11,7 @@ struct Profile: Decodable {
     let email: String
     
     enum CodingKeys: String, CodingKey {
-        case username = "username"
+        case username
         case email
     }
 }

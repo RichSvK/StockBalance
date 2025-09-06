@@ -18,11 +18,11 @@ struct RegisterView: View {
             HStack {
                 Button(action: {
                     isPresented = false
-                }) {
+                }, label: {
                     Image(systemName: "xmark")
                         .foregroundColor(.red)
                         .font(.system(size: 20))
-                }
+                })
                 Spacer()
             }
 
@@ -56,10 +56,10 @@ struct RegisterView: View {
 
                 Button(action: {
                     isPasswordVisible.toggle()
-                }) {
+                }, label: {
                     Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
                         .foregroundColor(.gray)
-                }
+                })
             }
 
             TextField("Username", text: $viewModel.username)
@@ -80,7 +80,7 @@ struct RegisterView: View {
             Spacer()
         }
         .padding()
-        .onChange(of: viewModel.registrationSuccess) { item in
+        .onChange(of: viewModel.registrationSuccess) { _ in
             if viewModel.registrationSuccess {
                 isPresented = false
             }

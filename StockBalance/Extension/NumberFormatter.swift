@@ -1,6 +1,6 @@
 import SwiftUI
 
-extension View{
+extension View {
     func formatNumber(_ number: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
