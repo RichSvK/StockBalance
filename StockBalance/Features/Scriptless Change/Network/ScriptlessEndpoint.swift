@@ -6,7 +6,7 @@ enum ScriptlessEndpoint {
     var path: String {
         switch self {
         case .getScriptlessChange:
-            return "http://localhost:3000/api/auth/balance/scriptless"
+            return "http://localhost:8080/api/auth/balance/scriptless"
         }
     }
 }

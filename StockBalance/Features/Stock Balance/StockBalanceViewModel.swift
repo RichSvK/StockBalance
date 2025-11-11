@@ -13,8 +13,8 @@ internal class StockBalanceViewModel: ObservableObject {
     @Published private(set) var filteredBalance: [StockSeries] = []
     var flattenedSeries: [StockSeries] = []
 
+    var alertMessage: String = ""
     @Published var showAlert: Bool = false
-    @Published var alertMessage: String = ""
 
     init() {
         fetchStockBalance()
@@ -58,13 +58,16 @@ internal class StockBalanceViewModel: ObservableObject {
         NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { result in
             switch result {
             case .success(let (response, statusCode)):
-                if statusCode == 200 {
-                        DispatchQueue.main.async {
-                            self.stockBalance = response.data
-                            self.filterBalance()
-                        }
-                        print("✅ Success Load \(self.stock) Data")
+                guard statusCode == 200 else {
+                    print("❌ Status Code: \(statusCode)")
+                    return
                 }
+                
+                DispatchQueue.main.async {
+                    self.stockBalance = response.data
+                    self.filterBalance()
+                }
+                print("✅ Success Load \(self.stock) Data")
 
             case .failure(let error):
                 print("❌ Error: \(error.localizedDescription)")

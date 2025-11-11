@@ -20,8 +20,11 @@ struct StockBalanceView: View {
                 TextField("Stock Code", text: $viewModel.stock)
                     .textFieldStyle(.roundedBorder)
                     .focused($isFocused, equals: .name)
+                    .onSubmit {
+                        viewModel.fetchStockBalance()
+                    }
                 
-                Text("Shareholder Composition")
+                Text("\(viewModel.stock) Shareholder Composition")
                     .font(.headline)
                     .padding(.horizontal)
                 
@@ -38,29 +41,7 @@ struct StockBalanceView: View {
                         .foregroundColor(.secondary)
                         .frame(height: 400)
                 } else {
-                    Chart {
-                        ForEach(viewModel.flattenedSeries) { item in
-                            LineMark(
-                                x: .value("Date", item.date),
-                                y: .value("Value", item.value),
-                                series: .value("Category", item.category)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(by: .value("Category", item.category))
-                        }
-                    }
-                    .frame(height: 400)
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisGridLine()
-                            AxisTick()
-                            AxisValueLabel {
-                                if let doubleValue = value.as(Double.self) {
-                                    Text(String(format: "%.0f%%", doubleValue))
-                                }
-                            }
-                        }
-                    }
+                    StockChart(series: viewModel.flattenedSeries)
                 }
             }
             .padding()
