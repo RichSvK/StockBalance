@@ -1,13 +1,15 @@
 import Foundation
 
 internal class RegisterViewModel: ObservableObject {
-    var email: String = ""
-    var password: String = ""
-    var username: String = ""
-
+    // MARK: Published Variables
     @Published var errorMessage: String = ""
     @Published var showAlert: Bool = false
     @Published var registrationSuccess: Bool = false
+    
+    // MARK: Variables
+    var email: String = ""
+    var password: String = ""
+    var username: String = ""
 
     func register() {
         let url: String = RegisterEndpoint.register.path

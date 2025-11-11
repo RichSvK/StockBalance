@@ -1,9 +1,12 @@
 import Foundation
 
 internal class ProfileViewModel: ObservableObject {
+    // MARK: Published Variables
     @Published var showAlert: Bool = false
-    var alertMessage: String = ""
     @Published var userProfile: Profile = Profile(username: "", email: "")
+
+    // MARK: Variables    
+    var alertMessage: String = ""
 
     func getUserProfile() {
         let url: String = "http://localhost:3000/api/auth/user/profile"

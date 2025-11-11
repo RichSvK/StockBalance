@@ -1,21 +1,21 @@
 import SwiftUI
 
 internal class StockBalanceViewModel: ObservableObject {
-    var stock: String = "BBCA"
-    
+    // MARK: Published variables
+    @Published private var stockBalance: [StockBalance] = []
+    @Published private(set) var filteredBalance: [StockSeries] = []
+    @Published var showAlert: Bool = false
     @Published var investorType: String = "All" {
         didSet {
             filterBalance()
         }
     }
-
-    @Published private var stockBalance: [StockBalance] = []
-    @Published private(set) var filteredBalance: [StockSeries] = []
+    
+    // MARK: Variable
     var flattenedSeries: [StockSeries] = []
-
     var alertMessage: String = ""
-    @Published var showAlert: Bool = false
-
+    var stock: String = "BBCA"
+    
     init() {
         fetchStockBalance()
         filterBalance()

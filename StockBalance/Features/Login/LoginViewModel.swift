@@ -2,11 +2,14 @@ import Foundation
 import SwiftUI
 
 internal class LoginViewModel: ObservableObject {
+    // MARK: Published Variables
+    @Published var showAlert: Bool = false
+    @Published var showRegister: Bool = false
+    
+    // MARK: Variables
     var email: String = ""
     var password: String = ""
     var errorMessage: String = ""
-    @Published var showAlert: Bool = false
-    @Published var showRegister: Bool = false
     
     func login() {
         let url: String = LoginEndpoint.login.path
