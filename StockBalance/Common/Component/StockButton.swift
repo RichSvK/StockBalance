@@ -9,12 +9,13 @@ import SwiftUI
 
 struct StockButton<Label: View>: View {
     let action: () -> Void
-    let label: () -> Label
     var background: Color = ColorToken.greenColor.toColor()
     var foregroundColor: Color = ColorToken.whiteBlackColor.toColor()
     var cornerRadius: CGFloat = 10
     var padding: CGFloat = 8
-
+    
+    let label: () -> Label
+    
     var body: some View {
         Button(action: action) {
             label()

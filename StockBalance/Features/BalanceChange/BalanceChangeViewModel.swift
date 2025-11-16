@@ -12,7 +12,7 @@ internal class BalanceChangeViewModel: ObservableObject {
     @Published var isDecreased: String = "Decrease"
     @Published var holder: ShareholderCategory = .localID
     @Published var showAlert: Bool = false
-    @Published var listStock: [BalanceChangeResponse] = []
+    @Published var listStock: [BalanceChangeData] = []
     @Published var currentPage: Int = 1
     
     // MARK: Public Variables
@@ -30,7 +30,7 @@ internal class BalanceChangeViewModel: ObservableObject {
             change: change,
             page: "\(currentPage)").path
                 
-        NetworkManager.shared.fetch(from: url, responseType: [BalanceChangeResponse].self) { result in
+        NetworkManager.shared.fetch(from: url, responseType: BalanceChangeResponse.self) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let (response, statusCode)):
@@ -41,8 +41,8 @@ internal class BalanceChangeViewModel: ObservableObject {
                     }
                     
                     self.statusDecrease = self.isDecreased == "Decrease" ? true : false
-                    self.haveNext = response.count >= 11 ? true : false
-                    self.listStock = self.haveNext ? Array(response.dropLast()) : response
+                    self.haveNext = response.haveNext
+                    self.listStock = response.data ?? []
                 
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription

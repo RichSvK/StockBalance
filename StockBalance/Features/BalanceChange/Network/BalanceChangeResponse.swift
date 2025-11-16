@@ -6,6 +6,16 @@
 //
 
 struct BalanceChangeResponse: Decodable {
+    let haveNext: Bool
+    let data: [BalanceChangeData]?
+
+    enum CodingKeys: String, CodingKey {
+        case haveNext = "have_next"
+        case data
+    }
+}
+
+struct BalanceChangeData: Decodable {
     let stockCode: String
     let previousOwnership: Int64
     let currentOwnership: Int64

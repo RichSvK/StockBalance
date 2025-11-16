@@ -4,12 +4,13 @@ internal class ProfileViewModel: ObservableObject {
     // MARK: Published Variables
     @Published var showAlert: Bool = false
     @Published var userProfile: Profile = Profile(username: "", email: "")
-
-    // MARK: Variables    
+    
+    // MARK: Variables
     var alertMessage: String = ""
 
     func getUserProfile() {
-        let url: String = "http://localhost:3000/api/auth/user/profile"
+        let url: String = ProfileEndpoint.getProfile.path
+
         NetworkManager.shared.fetch(from: url, responseType: ProfileResponse.self) { result in
             DispatchQueue.main.async {
                 switch result {

@@ -1,6 +1,6 @@
 import Foundation
 
-enum ProfileEndpoint {
+enum ProfileEndpoint: EndpointProtocol {
     case getProfile
 
     var path: String {

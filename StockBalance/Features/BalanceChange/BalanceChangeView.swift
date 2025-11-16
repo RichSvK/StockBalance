@@ -56,16 +56,20 @@ struct BalanceChangeView: View {
                 BalanceChangeResult(viewModel: viewModel)
                 
                 HStack {
-                    StockButton(action: { viewModel.changePage(isNext: false) }, label: {
-                        Image(systemName: "chevron.left")
-                    })
+                    StockButton(
+                        action: { viewModel.changePage(isNext: false) },
+                        background: viewModel.currentPage == 1 ? ColorToken.disabledGreen.toColor() : ColorToken.greenColor.toColor(),
+                        label: { Image(systemName: "chevron.left") }
+                    )
                     .disabled(viewModel.currentPage == 1)
                     
                     Text("\(viewModel.currentPage)")
                     
-                    StockButton(action: { viewModel.changePage(isNext: true) }, label: {
-                        Image(systemName: "chevron.right")
-                    })
+                    StockButton(
+                        action: { viewModel.changePage(isNext: true) },
+                        background: !viewModel.haveNext ? ColorToken.disabledGreen.toColor() : ColorToken.greenColor.toColor(),
+                        label: { Image(systemName: "chevron.right") }
+                    )
                     .disabled(!viewModel.haveNext)
                 }
             }
