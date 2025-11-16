@@ -15,10 +15,17 @@ struct ContentView: View {
             
             ScriptlessChangeView(viewModel: ScriptlessChangeViewModel())
                 .tabItem {
-                    Image(systemName: "pencil")
+                    Image(systemName: "slider.horizontal.2.square.on.square")
                     Text("Scriptless")
                 }
                 .tag(1)
+            
+            BalanceChangeView(viewModel: BalanceChangeViewModel())
+                .tabItem {
+                    Image(systemName: "pencil")
+                    Text("Changes")
+                }
+                .tag(3)
             
             RootView()
                 .tabItem {
@@ -27,6 +34,7 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
+        .tint(ColorToken.greenColor.toColor())
         .onChange(of: token) { newValue in
             if !newValue.isEmpty {
                 selectedTab = 2

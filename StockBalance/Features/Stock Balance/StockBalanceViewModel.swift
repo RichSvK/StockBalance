@@ -67,7 +67,7 @@ internal class StockBalanceViewModel: ObservableObject {
                     self.stockBalance = response.data
                     self.filterBalance()
                 }
-                print("✅ Success Load \(self.stock) Data")
+                // print("✅ Success Load \(self.stock) Data")
 
             case .failure(let error):
                 print("❌ Error: \(error.localizedDescription)")

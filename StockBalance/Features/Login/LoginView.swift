@@ -43,9 +43,13 @@ struct LoginView: View {
                     isPasswordVisible.toggle()
                 }, label: {
                     Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 10)
                         .foregroundColor(.gray)
                 })
             }
+            .frame(height: 40)
             .padding(.top, 5)
             
             Button(action: {

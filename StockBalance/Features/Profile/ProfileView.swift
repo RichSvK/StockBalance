@@ -49,7 +49,6 @@ struct ProfileView: View {
         }
         .onAppear {
             viewModel.getUserProfile()
-            print("Token: \(token)")
         }
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }

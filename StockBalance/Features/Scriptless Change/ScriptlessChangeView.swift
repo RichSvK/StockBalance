@@ -1,14 +1,8 @@
 import SwiftUI
 
 struct ScriptlessChangeView: View {
-    @State private var selectedMonth = 1
-    @State private var selectedYear = 2025
-    
-    @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel: ScriptlessChangeViewModel
-    
-    let months = Calendar.current.monthSymbols
-    let years = Array(2025...2100)
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -86,7 +80,6 @@ struct ScriptlessChangeView: View {
         .frame(maxWidth: UIScreen.main.bounds.width * 0.7)
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
-        .background(Color.black)
         .foregroundStyle(change > 0 ? Color.green : change < 0 ? Color.red : Color.yellow)
         .cornerRadius(10)
     }
