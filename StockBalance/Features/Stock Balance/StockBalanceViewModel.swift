@@ -16,7 +16,8 @@ internal class StockBalanceViewModel: ObservableObject {
     var alertMessage: String = ""
     var stock: String = "BBCA"
     
-    init() {
+    init(stock: String) {
+        self.stock = stock
         fetchStockBalance()
         filterBalance()
     }
@@ -45,14 +46,6 @@ internal class StockBalanceViewModel: ObservableObject {
     }
 
     func fetchStockBalance() {
-        guard !stock.isEmpty else {
-            DispatchQueue.main.async {
-                self.alertMessage = "Please enter a stock code"
-                self.showAlert = true
-            }
-            return
-        }
-
         let url: String = "\(BalanceEndpoint.getStockBalance.path)\(stock)"
         
         NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { result in

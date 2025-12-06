@@ -19,8 +19,17 @@ struct ScriptlessChangeView: View {
                     .padding(.horizontal, 8)
                 
                 ForEach(viewModel.listStock, id: \.self) { item in
-                    NavigationLink(destination: ScriptlessChangeDetailView(stock: item)) {
-                        scriptlessDataRow(stock: item.code, change: item.changePercentage)
+                    NavigationLink {
+                        ScriptlessChangeDetailView(
+                            stock: item,
+                            startTime: viewModel.startTime,
+                            endTime: viewModel.endTime
+                        )
+                    } label: {
+                        scriptlessDataRow(
+                            stock: item.code,
+                            change: item.changePercentage
+                        )
                     }
                     
                     Rectangle()

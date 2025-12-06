@@ -5,9 +5,11 @@ internal class ScriptlessChangeViewModel: ObservableObject {
     @Published private(set) var listStock: [ScriptlessChangeData] = []
     @Published var showAlert: Bool = false
     var alertMessage: String = ""
+    var startTime: String = ""
+    var endTime: String = ""
 
     func fetchChanges() async {
-        let (startTime, endTime) = buildStartEndDates()
+        (startTime, endTime) = buildStartEndDates()
 
         // Build URLComponents safely
         guard var components = URLComponents(string: ScriptlessEndpoint.getScriptlessChange.path) else {

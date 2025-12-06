@@ -13,19 +13,9 @@ struct StockBalanceView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
-                Text("Stock Balance")
-                    .font(.title)
-                    .fontWeight(.bold)
-                
-                TextField("Stock Code", text: $viewModel.stock)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($isFocused, equals: .name)
-                    .onSubmit {
-                        viewModel.fetchStockBalance()
-                    }
-                
                 Text("\(viewModel.stock) Shareholder Composition")
-                    .font(.headline)
+                    .font(.title3)
+                    .fontWeight(.bold)
                     .padding(.horizontal)
                 
                 Picker("Chart Type", selection: $viewModel.investorType) {
