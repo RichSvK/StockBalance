@@ -30,8 +30,8 @@ struct ScriptlessChangeView: View {
                 }
             }
         }
-        .onAppear {
-            viewModel.fetchChanges()
+        .task {
+            await viewModel.fetchChanges()
         }
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }
