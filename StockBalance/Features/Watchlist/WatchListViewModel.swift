@@ -106,6 +106,7 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
             }
 
             isSearching = true
+            
             defer { isSearching = false }
 
             await fetchStocks(urlString: urlString)
