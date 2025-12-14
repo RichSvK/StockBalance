@@ -6,7 +6,7 @@ enum ProfileEndpoint: EndpointProtocol {
     var path: String {
         switch self {
         case .getProfile:
-            return "http://localhost:3000/api/auth/user/profile"
+            return ":8888/api/auth/user/profile"
         }
     }
 }

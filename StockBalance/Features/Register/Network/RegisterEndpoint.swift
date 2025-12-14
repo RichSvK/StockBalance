@@ -1,12 +1,12 @@
 import Foundation
 
-enum RegisterEndpoint {
+enum RegisterEndpoint: EndpointProtocol {
     case register
 
     var path: String {
         switch self {
         case .register:
-            return "http://localhost:8888/users/register"
+            return ":8888/users/register"
         }
     }
 }

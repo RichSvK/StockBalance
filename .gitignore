@@ -22,3 +22,5 @@ DerivedData/
 *~
 *.swp
 .DS_Store
+
+Secrets.plist

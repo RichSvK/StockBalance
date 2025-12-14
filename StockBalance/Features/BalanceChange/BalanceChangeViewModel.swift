@@ -13,25 +13,34 @@ internal class BalanceChangeViewModel: ObservableObject {
     @Published var holder: ShareholderCategory = .localID
     @Published var showAlert: Bool = false
     @Published var listStock: [BalanceChangeData] = []
-    @Published var currentPage: Int = 1
+    @Published var currentPage: Int = 1 {
+        didSet {
+            Task {
+                await self.loadData(shareholderType: self.holder.rawValue, isDecreased: self.isDecreased)
+            }
+        }
+    }
+    @Published var isLoading: Bool = true
     
     // MARK: Public Variables
     var errorMessage: String = ""
     var statusDecrease: Bool = false
     var haveNext: Bool = false
     
-    init() {
-        loadData(shareholderType: holder.rawValue, isDecreased: isDecreased)
-    }
-    
-    func loadData(shareholderType holder: String, isDecreased change: String) {
+    func loadData(shareholderType holder: String, isDecreased change: String) async {
         let url: String = BalanceChangeEndpoint.getBalance(
             shareholderType: mapToCategory(holder),
             change: change,
-            page: "\(currentPage)").path
-                
+            page: "\(currentPage)").urlString
+            
+        Task { @MainActor in
+            self.isLoading = true
+        }
+        
         NetworkManager.shared.fetch(from: url, responseType: BalanceChangeResponse.self) { result in
-            DispatchQueue.main.async {
+            Task { @MainActor in
+                defer { self.isLoading = false }
+                
                 switch result {
                 case .success(let (response, statusCode)):
                     guard statusCode == 200 else {
@@ -48,6 +57,8 @@ internal class BalanceChangeViewModel: ObservableObject {
                     self.errorMessage = error.localizedDescription
                     self.showAlert = true
                 }
+                
+                self.isLoading = false
             }
         }
     }
@@ -58,10 +69,10 @@ internal class BalanceChangeViewModel: ObservableObject {
         return key
     }
 
+    // Change page to previous or
     func changePage(isNext next: Bool) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.currentPage += (next ? 1 : -1)
-            self.loadData(shareholderType: self.holder.rawValue, isDecreased: self.isDecreased)
         }
     }
     
@@ -70,9 +81,8 @@ internal class BalanceChangeViewModel: ObservableObject {
     }
     
     func showData() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.currentPage = 1
-            self.loadData(shareholderType: self.holder.rawValue, isDecreased: self.isDecreased)
         }
     }
 }

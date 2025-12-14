@@ -2,94 +2,134 @@ import SwiftUI
 
 struct ScriptlessChangeView: View {
     @StateObject var viewModel: ScriptlessChangeViewModel
-    @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack {
-                Text("Scriptless Change")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                headerRow()
-                
-                Rectangle()
-                    .frame(height: 1.2)
-                    .foregroundStyle(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.5))
-                    .padding(.horizontal, 8)
-                
-                ForEach(viewModel.listStock, id: \.self) { item in
-                    NavigationLink {
-                        ScriptlessChangeDetailView(
-                            stock: item,
-                            startTime: viewModel.startTime,
-                            endTime: viewModel.endTime
-                        )
-                    } label: {
-                        scriptlessDataRow(
-                            stock: item.code,
-                            change: item.changePercentage
-                        )
-                    }
-                    
-                    Rectangle()
-                        .frame(height: 0.8)
-                        .foregroundStyle(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.5))
-                        .padding(.horizontal, 8)
-                }
+            LazyVStack(spacing: 12) {
+                headerSection
+                separator
+
+                contentSection
             }
+            .padding(.horizontal)
         }
-        .task {
-            await viewModel.fetchChanges()
-        }
+        .task { await viewModel.fetchChanges() }
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }
         } message: {
             Text(viewModel.alertMessage)
         }
-        .padding()
+        .padding(.horizontal)
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: 8) {
+            Text("Scriptless Change")
+                .font(.title)
+                .fontWeight(.bold)
+
+            headerRow
+        }
+        .padding(.vertical, 8)
     }
     
-    private func headerRow() -> some View {
+    var headerRow: some View {
         HStack {
             Text("Stock")
-                .font(.body)
-                .frame(width: UIScreen.main.bounds.width * 0.2)
-            
-            Rectangle()
-                .fill(Color.clear)
-                .frame(width: 1)
-                .padding(.horizontal, 8)
-            
+                .font(.title3)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+
             Text("Change (%)")
-                .font(.body)
-                .frame(width: UIScreen.main.bounds.width * 0.3)
+                .font(.title3)
+                .frame(width: 110, alignment: .trailing)
         }
-        .frame(maxWidth: UIScreen.main.bounds.width * 0.7)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-        .cornerRadius(10)
+        .padding(.horizontal, 4)
+        .padding(.top, 12)
     }
     
-    func scriptlessDataRow(stock: String, change: Double) -> some View {
-        HStack {
+    private func scriptlessDataRow(stock: String, change: Double) -> some View {
+        HStack(spacing: 12) {
             Text(stock)
                 .font(.callout)
-                .frame(width: UIScreen.main.bounds.width * 0.25)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             
-            Rectangle()
-                .fill(Color.gray.opacity(0.8))
-                .frame(width: 1)
-                .padding(.horizontal, 8)
+            Spacer()
             
+            // show percentage with 2 decimal places
             Text("\(formatNumber(change))%")
                 .font(.callout)
-                .frame(width: UIScreen.main.bounds.width * 0.25)
+                .frame(width: 110, alignment: .trailing)
+                .foregroundStyle(colorForChange(change))
+            
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+                .font(.system(size: 12, weight: .semibold))
         }
-        .frame(maxWidth: UIScreen.main.bounds.width * 0.7)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-        .foregroundStyle(change > 0 ? Color.green : change < 0 ? Color.red : Color.yellow)
-        .cornerRadius(10)
+    }
+
+    @ViewBuilder
+    private var contentSection: some View {
+        if viewModel.isLoading {
+            loadingView
+        } else {
+            stockList
+        }
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+
+            Text("Loading data")
+                .font(.subheadline)
+        }
+        .frame(height: 300)
+    }
+
+    private var stockList: some View {
+        ForEach(viewModel.listStock, id: \.self) { item in
+            VStack(spacing: 12) {
+                stockRow(item)
+            }
+        }
+    }
+    
+    private func stockRow(_ item: ScriptlessChangeData) -> some View {
+        NavigationLink {
+            ScriptlessChangeDetailView(
+                stock: item,
+                startTime: viewModel.startTime,
+                endTime: viewModel.endTime
+            )
+        } label: {
+            scriptlessDataRow(
+                stock: item.code,
+                change: item.changePercentage
+            )
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(.separator), lineWidth: 0.4)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var separator: some View {
+        Rectangle()
+            .frame(height: 0.6)
+            .foregroundColor(Color(.separator))
+            .opacity(0.6)
+    }
+
+    // Small helper for color
+    private func colorForChange(_ change: Double) -> Color {
+        if change > 0 { return ColorToken.greenColor.toColor() }
+        if change < 0 { return ColorToken.redColor.toColor() }
+        return .yellow
     }
 }

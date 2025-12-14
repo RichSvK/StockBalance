@@ -4,6 +4,8 @@ import Foundation
 internal class ScriptlessChangeViewModel: ObservableObject {
     @Published private(set) var listStock: [ScriptlessChangeData] = []
     @Published var showAlert: Bool = false
+    @Published var isLoading: Bool = true
+    
     var alertMessage: String = ""
     var startTime: String = ""
     var endTime: String = ""
@@ -12,7 +14,7 @@ internal class ScriptlessChangeViewModel: ObservableObject {
         (startTime, endTime) = buildStartEndDates()
 
         // Build URLComponents safely
-        guard var components = URLComponents(string: ScriptlessEndpoint.getScriptlessChange.path) else {
+        guard var components = URLComponents(string: ScriptlessEndpoint.getScriptlessChange.urlString) else {
             self.alertMessage = "Invalid endpoint"
             self.showAlert = true
             return
@@ -28,12 +30,17 @@ internal class ScriptlessChangeViewModel: ObservableObject {
             self.showAlert = true
             return
         }
-
+        
+        Task { @MainActor in
+            self.isLoading = true
+        }
+        
         NetworkManager.shared.fetch(from: urlString, responseType: ScriptlessChangeResponse.self) { [weak self] result in
             // Move UI updates back to main actor
             Task { @MainActor in
                 guard let self = self else { return }
-
+                defer { self.isLoading = false }
+                
                 switch result {
                 case .success(let (response, statusCode)):
                     guard statusCode == 200, let data = response.data else {

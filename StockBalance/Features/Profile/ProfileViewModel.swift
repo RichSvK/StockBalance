@@ -9,7 +9,7 @@ internal class ProfileViewModel: ObservableObject {
     var alertMessage: String = ""
 
     func getUserProfile() {
-        let url: String = ProfileEndpoint.getProfile.path
+        let url: String = ProfileEndpoint.getProfile.urlString
 
         NetworkManager.shared.fetch(from: url, responseType: ProfileResponse.self) { result in
             DispatchQueue.main.async {

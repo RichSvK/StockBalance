@@ -1,12 +1,12 @@
 import Foundation
 
-enum LoginEndpoint {
+enum LoginEndpoint: EndpointProtocol {
     case login
 
     var path: String {
         switch self {
         case .login:
-            return "http://localhost:8888/api/user/login"
+            return ":8888/api/user/login"
         }
     }
 }

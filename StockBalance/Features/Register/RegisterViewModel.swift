@@ -12,7 +12,7 @@ internal class RegisterViewModel: ObservableObject {
     var username: String = ""
 
     func register() {
-        let url: String = RegisterEndpoint.register.path
+        let url: String = RegisterEndpoint.register.urlString
         let requestBody: RegisterRequest = RegisterRequest(email: self.email, password: self.password, username: self.username)
         
         NetworkManager.shared.post(to: url, body: requestBody, responseType: RegisterResponse.self) { result in

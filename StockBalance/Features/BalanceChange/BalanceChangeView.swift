@@ -53,8 +53,13 @@ struct BalanceChangeView: View {
                 Text("Result")
                     .font(.title3)
                 
-                BalanceChangeResult(viewModel: viewModel)
-                
+                if viewModel.isLoading {
+                    ProgressView()
+                        .frame(height: 300)
+                } else {
+                    BalanceChangeResult(viewModel: viewModel)
+                }
+
                 HStack {
                     StockButton(
                         action: { viewModel.changePage(isNext: false) },
@@ -76,6 +81,9 @@ struct BalanceChangeView: View {
             .padding(.horizontal)
             .padding(.top, 8)
         }
+        .task {
+            await viewModel.loadData(shareholderType: viewModel.holder.rawValue, isDecreased: viewModel.isDecreased)
+        }
     }
 }
 
@@ -83,16 +91,28 @@ private struct BalanceChangeResult: View {
     @ObservedObject var viewModel: BalanceChangeViewModel
     
     var body: some View {
-        ForEach(viewModel.listStock.indices, id: \.self) { index in
-            let item = viewModel.listStock[index]
-            
-            HStack {
-                Text(item.stockCode)
-                Spacer()
-                Text("\(formatNumber(viewModel.convertNumber(of: item.changePercentage)))%")
-                    .foregroundStyle(item.currentOwnership < item.previousOwnership ? ColorToken.redColor.toColor() : ColorToken.greenColor.toColor())
+        ForEach(viewModel.listStock, id: \.stockCode) { item in
+            NavigationLink(
+                destination: StockBalanceView(
+                    viewModel: StockBalanceViewModel(stock: item.stockCode)
+                )
+            ) {
+                HStack {
+                    Text(item.stockCode)
+                    Spacer()
+                    Text("\(formatNumber(viewModel.convertNumber(of: item.changePercentage)))%")
+                        .foregroundStyle(
+                            item.currentOwnership < item.previousOwnership
+                            ? ColorToken.redColor.toColor()
+                            : ColorToken.greenColor.toColor()
+                        )
+
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 6)
         }
     }
 }

@@ -11,3 +11,11 @@ struct WatchListResponse: Decodable {
     let message: String
     let stock: [String]?
 }
+
+struct UpdateWatchListResponse: Decodable {
+    let message: String
+}
+
+struct StockSearchResponse: Decodable {
+    let data: [String]?
+}

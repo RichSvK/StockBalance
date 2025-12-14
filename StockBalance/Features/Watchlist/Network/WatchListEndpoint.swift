@@ -1,12 +1,15 @@
 import Foundation
 
-enum WatchListEndpoint {
+enum WatchListEndpoint: EndpointProtocol {
     case getWatchlist
-
+    case getStock
+    
     var path: String {
         switch self {
         case .getWatchlist:
-            return "http://localhost:8080/watchlist/"
+            return "/watchlist/"
+        case .getStock:
+            return "/stock/"
         }
     }
 }

@@ -1,12 +1,13 @@
 import Foundation
 
-enum BalanceEndpoint {
+enum BalanceEndpoint: EndpointProtocol {
     case getStockBalance
-
+    case updateWatchlist
+    
     var path: String {
         switch self {
-        case .getStockBalance:
-            return "http://localhost:8080/balance/"
-        }
+        case .getStockBalance: return "/balance/"
+        case .updateWatchlist: return "/watchlist/"
+        }        
     }
 }

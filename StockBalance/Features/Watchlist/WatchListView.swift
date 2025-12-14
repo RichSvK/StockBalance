@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WatchlistView: View {
     @StateObject var viewModel: WatchListViewModel
+    @State private var navigateToStockBalance = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
@@ -16,6 +17,16 @@ struct WatchlistView: View {
                 Text("Stock Watchlist")
                     .font(.title)
                     .fontWeight(.bold)
+                
+                NavigationLink {
+                    SearchView(viewModel: viewModel)
+                } label: {
+                    TextField("Search stocks", text: .constant(""))
+                        .disabled(true)
+                        .padding(10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                }
                 
                 if viewModel.watchList.count != 0 {
                     ForEach(viewModel.watchList, id: \.self) { stock in
@@ -32,9 +43,6 @@ struct WatchlistView: View {
             }
             .padding()
         }
-//        .task {
-//            await viewModel.fetchWatchlist()
-//        }
     }
 
     @ViewBuilder
@@ -42,6 +50,7 @@ struct WatchlistView: View {
         HStack {
             Text(stock)
                 .font(.headline)
+                .foregroundColor(ColorToken.whiteBlackColor.toColor())
 
             Spacer()
 

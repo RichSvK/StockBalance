@@ -1,12 +1,12 @@
 import Foundation
 
-enum ScriptlessEndpoint {
+enum ScriptlessEndpoint: EndpointProtocol {
     case getScriptlessChange
 
     var path: String {
         switch self {
         case .getScriptlessChange:
-            return "http://localhost:8080/api/auth/balance/scriptless"
+            return "/api/auth/balance/scriptless"
         }
     }
 }

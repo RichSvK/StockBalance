@@ -26,7 +26,10 @@ struct StockBalanceView: View {
                 .pickerStyle(.segmented)
                 .padding(.bottom, 16)
                 
-                if viewModel.flattenedSeries.isEmpty {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .frame(height: 400)
+                } else if viewModel.flattenedSeries.isEmpty {
                     Text("No data available")
                         .foregroundColor(.secondary)
                         .frame(height: 400)
@@ -36,13 +39,24 @@ struct StockBalanceView: View {
             }
             .padding()
         }
-        .onTapGesture {
-            isFocused = nil
+        .task {
+            await viewModel.fetchStockBalance()
         }
+        .onTapGesture { isFocused = nil }
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }
         } message: {
             Text(viewModel.alertMessage)
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: {
+                    
+                }, label: {
+                    Image(systemName: viewModel.isWatchList ? "star.fill" : "star")
+                        .foregroundColor(viewModel.isWatchList ? .yellow : ColorToken.greenColor.toColor())
+                })
+            }
         }
     }
 }

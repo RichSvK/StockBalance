@@ -11,6 +11,9 @@ internal class StockBalanceViewModel: ObservableObject {
         }
     }
     
+    @Published private(set) var isLoading: Bool = true
+    @Published private(set) var isWatchList: Bool = false
+    
     // MARK: Variable
     var flattenedSeries: [StockSeries] = []
     var alertMessage: String = ""
@@ -18,8 +21,6 @@ internal class StockBalanceViewModel: ObservableObject {
     
     init(stock: String) {
         self.stock = stock
-        fetchStockBalance()
-        filterBalance()
     }
     
     private struct RawSeries {
@@ -45,29 +46,32 @@ internal class StockBalanceViewModel: ObservableObject {
         }
     }
 
-    func fetchStockBalance() {
-        let url: String = "\(BalanceEndpoint.getStockBalance.path)\(stock)"
-        
-        NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { result in
-            switch result {
-            case .success(let (response, statusCode)):
-                guard statusCode == 200 else {
-                    print("❌ Status Code: \(statusCode)")
-                    return
-                }
-                
-                DispatchQueue.main.async {
+    func fetchStockBalance() async {
+        Task { @MainActor in
+            isLoading = true
+        }
+
+        let url = "\(BalanceEndpoint.getStockBalance.urlString)\(stock)"
+
+        NetworkManager.shared.fetch(from: url, responseType: StockResponse.self) { [weak self] result in
+            guard let self = self else { return }
+
+            Task { @MainActor in
+                defer { self.isLoading = false }
+
+                switch result {
+                case .success(let (response, statusCode)):
+                    guard statusCode == 200 else { return }
                     self.stockBalance = response.data
                     self.filterBalance()
-                }
-                // print("✅ Success Load \(self.stock) Data")
 
-            case .failure(let error):
-                print("❌ Error: \(error.localizedDescription)")
+                case .failure(let error):
+                    print("❌ Error: \(error.localizedDescription)")
+                }
             }
         }
     }
-    
+
     private func extractSeries(from item: StockBalance, includeSummary: Bool = false) -> [StockSeries] {
         let rawSeries: [RawSeries] = [
             RawSeries(value: item.localIS, investorType: 1, category: "Insurance"),

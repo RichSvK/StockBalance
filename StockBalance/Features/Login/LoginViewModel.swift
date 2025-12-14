@@ -12,7 +12,7 @@ internal class LoginViewModel: ObservableObject {
     var errorMessage: String = ""
     
     func login() {
-        let url: String = LoginEndpoint.login.path
+        let url: String = LoginEndpoint.login.urlString
         let request: LoginRequest = LoginRequest(email: self.email, password: self.password)
         
         NetworkManager.shared.post(to: url, body: request, responseType: LoginResponse.self) { result in

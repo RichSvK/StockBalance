@@ -8,7 +8,7 @@
 import Foundation
 
 enum APIConfig {
-    static let baseURL = "http://127.0.0.1:8080/"
+    static let baseURL = Secrets.shared.backendHost
 }
 
 protocol EndpointProtocol {
@@ -19,7 +19,7 @@ protocol EndpointProtocol {
 
 extension EndpointProtocol {
     var urlString: String {
-        return APIConfig.baseURL + path
+        return (APIConfig.baseURL ?? "http://localhost") + path
     }
 
     var url: URL? {
