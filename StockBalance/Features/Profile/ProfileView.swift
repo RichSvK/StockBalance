@@ -47,8 +47,8 @@ struct ProfileView: View {
                 }
             }
         }
-        .onAppear {
-            viewModel.getUserProfile()
+        .task {
+            await viewModel.getUserProfile()
         }
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }

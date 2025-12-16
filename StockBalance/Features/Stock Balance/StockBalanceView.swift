@@ -51,11 +51,12 @@ struct StockBalanceView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
-                    
+                    viewModel.updateWatchlist()
                 }, label: {
                     Image(systemName: viewModel.isWatchList ? "star.fill" : "star")
                         .foregroundColor(viewModel.isWatchList ? .yellow : ColorToken.greenColor.toColor())
                 })
+                .disabled(viewModel.isUpdating)
             }
         }
     }

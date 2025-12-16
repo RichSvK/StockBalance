@@ -10,7 +10,7 @@ import SwiftUI
 
 struct StockChart: View {
     var series: [StockSeries] = []
-    
+
     var body: some View {
         Chart {
             ForEach(series) { item in

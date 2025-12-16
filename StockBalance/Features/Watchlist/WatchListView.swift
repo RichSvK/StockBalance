@@ -31,7 +31,7 @@ struct WatchlistView: View {
                 if viewModel.watchList.count != 0 {
                     ForEach(viewModel.watchList, id: \.self) { stock in
                         NavigationLink {
-                            StockBalanceView(viewModel: StockBalanceViewModel(stock: stock))
+                            StockBalanceView(viewModel: StockBalanceViewModel(stock: stock, isWatchlist: true))
                         } label: {
                             watchlistRow(stock)
                         }
@@ -42,6 +42,9 @@ struct WatchlistView: View {
                 }
             }
             .padding()
+        }
+        .task {
+            await viewModel.fetchWatchlist()
         }
     }
 

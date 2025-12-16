@@ -8,27 +8,29 @@ internal class ProfileViewModel: ObservableObject {
     // MARK: Variables
     var alertMessage: String = ""
 
-    func getUserProfile() {
-        let url: String = ProfileEndpoint.getProfile.urlString
-
-        NetworkManager.shared.fetch(from: url, responseType: ProfileResponse.self) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let (response, statusCode)):
-                    guard statusCode == 200 else { return }
-                    if let data = response.data {
-                        self.userProfile = data
-                    }
-                                        
-                case .failure(let error):
-                    print("Error Access: \(error)")
+    func getUserProfile() async {
+        do {
+            let (response, statusCode) = try await NetworkManager.shared.request(
+                urlString: ProfileEndpoint.getProfile.urlString,
+                method: .get,
+                responseType: ProfileResponse.self
+            )
+            
+            Task { @MainActor in
+                guard statusCode == 200, let data = response.data else {
+                    alertMessage = response.message
+                    showAlert = true
+                    throw NetworkError.invalidResponse
                 }
+                userProfile = data
             }
+        } catch {
+            // Error
         }
     }
     
     func logout() {
         userProfile = Profile(username: "", email: "")
-        UserDefaults.standard.removeObject(forKey: "token")
+        TokenManager.shared.clear()
     }
 }

@@ -9,7 +9,7 @@ import Foundation
 
 struct WatchListResponse: Decodable {
     let message: String
-    let stock: [String]?
+    let stocks: [String]?
 }
 
 struct UpdateWatchListResponse: Decodable {

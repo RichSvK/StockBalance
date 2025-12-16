@@ -2,35 +2,36 @@ import Foundation
 
 internal class RegisterViewModel: ObservableObject {
     // MARK: Published Variables
-    @Published var errorMessage: String = ""
     @Published var showAlert: Bool = false
     @Published var registrationSuccess: Bool = false
     
     // MARK: Variables
+    var alertMessage: String = ""
     var email: String = ""
     var password: String = ""
     var username: String = ""
 
-    func register() {
-        let url: String = RegisterEndpoint.register.urlString
+    func register() async {
         let requestBody: RegisterRequest = RegisterRequest(email: self.email, password: self.password, username: self.username)
         
-        NetworkManager.shared.post(to: url, body: requestBody, responseType: RegisterResponse.self) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let (response, statusCode)):
-                    guard statusCode == 200 else {
-                        self.errorMessage = response.message
-                        self.showAlert = true
-                        return
-                    }
-                    self.registrationSuccess = true
-
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                    self.showAlert = true
+        do {
+            let (response, statusCode) = try await NetworkManager.shared.request(
+                urlString: RegisterEndpoint.register.urlString,
+                method: .post,
+                body: requestBody,
+                responseType: RegisterResponse.self
+            )
+            
+            Task { @MainActor in
+                guard statusCode == 200 else {
+                    alertMessage = response.message
+                    showAlert = true
+                    throw NetworkError.invalidResponse
                 }
+                registrationSuccess = true
             }
+        } catch {
+            // Error
         }
     }
 }

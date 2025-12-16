@@ -53,7 +53,9 @@ struct LoginView: View {
             .padding(.top, 5)
             
             Button(action: {
-                viewModel.login()
+                Task {
+                    await viewModel.login()
+                }
             }, label: {
                 Text("Login")
                     .foregroundStyle(Color.white)
@@ -80,7 +82,7 @@ struct LoginView: View {
         .alert("Notice", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) { }
         } message: {
-            Text(viewModel.errorMessage)
+            Text(viewModel.alertMessage)
         }
     }
 }

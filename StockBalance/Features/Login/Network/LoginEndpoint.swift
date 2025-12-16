@@ -6,7 +6,7 @@ enum LoginEndpoint: EndpointProtocol {
     var path: String {
         switch self {
         case .login:
-            return ":8888/api/user/login"
+            return "/api/user/login"
         }
     }
 }

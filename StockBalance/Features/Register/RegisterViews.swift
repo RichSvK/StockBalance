@@ -69,7 +69,9 @@ struct RegisterView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Button("Register") {
-                viewModel.register()
+                Task {
+                    await viewModel.register()
+                }
             }
             .padding()
             .frame(maxWidth: .infinity)
@@ -88,7 +90,7 @@ struct RegisterView: View {
         .alert("Error", isPresented: $viewModel.showAlert) {
             Button("Close", role: .cancel) {}
         } message: {
-            Text(viewModel.errorMessage)
+            Text(viewModel.alertMessage)
         }
     }
 }

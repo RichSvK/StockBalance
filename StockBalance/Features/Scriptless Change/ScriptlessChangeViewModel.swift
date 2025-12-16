@@ -4,13 +4,22 @@ import Foundation
 internal class ScriptlessChangeViewModel: ObservableObject {
     @Published private(set) var listStock: [ScriptlessChangeData] = []
     @Published var showAlert: Bool = false
-    @Published var isLoading: Bool = true
+    @Published var isLoading: Bool = false
     
     var alertMessage: String = ""
     var startTime: String = ""
     var endTime: String = ""
 
     func fetchChanges() async {
+        guard TokenManager.shared.accessToken != nil else {
+            self.alertMessage = NetworkError.notLoggedIn.errorDescription ?? "You are not logged in"
+            Task { @MainActor in
+                self.listStock = []
+                self.showAlert = true
+            }
+            return
+        }
+        
         (startTime, endTime) = buildStartEndDates()
 
         // Build URLComponents safely
@@ -31,30 +40,31 @@ internal class ScriptlessChangeViewModel: ObservableObject {
             return
         }
         
+        // Set state to loading and reset listStock
         Task { @MainActor in
             self.isLoading = true
+            self.listStock = []
         }
         
-        NetworkManager.shared.fetch(from: urlString, responseType: ScriptlessChangeResponse.self) { [weak self] result in
-            // Move UI updates back to main actor
-            Task { @MainActor in
-                guard let self = self else { return }
+        Task { @MainActor in
+            do {
                 defer { self.isLoading = false }
-                
-                switch result {
-                case .success(let (response, statusCode)):
-                    guard statusCode == 200, let data = response.data else {
-                        self.alertMessage = response.message
-                        self.showAlert = true
-                        return
-                    }
-                    self.listStock = data
 
-                case .failure(let error):
-                    self.alertMessage = "Failed to get data: \(error.localizedDescription)"
+                let (response, statusCode) = try await NetworkManager.shared.request(
+                    urlString: urlString,
+                    method: .get,
+                    responseType: ScriptlessChangeResponse.self
+                )
+                
+                guard statusCode == 200, let data = response.data else {
+                    self.alertMessage = response.message
                     self.showAlert = true
-                    print("Network error:", error)
+                    return
                 }
+                self.listStock = data
+
+            } catch {
+                // Error
             }
         }
     }

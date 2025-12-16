@@ -28,43 +28,27 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
 
     // Fetch watchlist data
     func fetchWatchlist() async {
-        // Build URLComponents safely
-        guard var components = URLComponents(string: WatchListEndpoint.getWatchlist.path) else {
-            self.alertMessage = "Invalid endpoint"
-            self.showAlert = true
-            return
-        }
-
-        components.queryItems = [
-            URLQueryItem(name: "user_id", value: "")
-        ]
-
-        guard let urlString = components.url?.absoluteString else {
-            self.alertMessage = "Failed to build URL"
-            self.showAlert = true
-            return
-        }
-
-        NetworkManager.shared.fetch(from: urlString, responseType: WatchListResponse.self) { [weak self] result in
-            // Move UI updates back to main actor
+        Task { @MainActor in self.watchList = [] }
+        guard TokenManager.shared.accessToken != nil else { return }
+        
+        do {
+            let (response, statusCode) = try await NetworkManager.shared.request(
+                urlString: WatchListEndpoint.getWatchlist.urlString,
+                method: .get,
+                responseType: WatchListResponse.self
+            )
+            
             Task { @MainActor in
-                guard let self = self else { return }
-
-                switch result {
-                case .success(let (response, statusCode)):
-                    guard statusCode == 200, let resultData = response.stock else {
-                        self.alertMessage = response.message
-                        self.showAlert = true
-                        return
-                    }
-                    self.watchList = resultData
-
-                case .failure(let error):
-                    self.alertMessage = "Failed to get data: \(error.localizedDescription)"
+                guard statusCode == 200 else {
+                    alertMessage = response.message
                     self.showAlert = true
-                    print("Network error:", error)
+                    throw URLError(.badServerResponse)
                 }
+        
+                self.watchList = response.stocks ?? []
             }
+        } catch {
+            // Error
         }
     }
     
@@ -84,9 +68,9 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
         searchTask = Task { @MainActor in
             // Debounce
             try? await Task.sleep(nanoseconds: 400_000_000)
-
+            
             guard !Task.isCancelled else { return }
-
+            
             guard var components = URLComponents(
                 string: WatchListEndpoint.getStock.urlString
             ) else {
@@ -94,52 +78,44 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
                 showAlert = true
                 return
             }
-
+            
             components.queryItems = [
                 URLQueryItem(name: "code", value: stock)
             ]
-
+            
             guard let urlString = components.url?.absoluteString else {
                 alertMessage = "Failed to build URL"
                 showAlert = true
                 return
             }
-
+            
             isSearching = true
             
             defer { isSearching = false }
-
-            await fetchStocks(urlString: urlString)
+            
+            do {
+                try await fetchStocks(urlString: urlString)
+            } catch {
+                alertMessage = error.localizedDescription
+                showAlert = true
+            }
         }
     }
     
     // Fetch Stocks
-    private func fetchStocks(urlString: String) async {
-        await withCheckedContinuation { continuation in
-            NetworkManager.shared.fetch(from: urlString, responseType: StockSearchResponse.self) { [weak self] result in
-                guard let self = self else {
-                    continuation.resume()
-                    return
-                }
-                
-                Task { @MainActor in
-                    switch result {
-                    case .success(let (response, statusCode)):
-                        guard statusCode == 200, let data = response.data else {
-                            self.showAlert = true
-                            continuation.resume()
-                            return
-                        }
-                        self.searchResults = data
+    @MainActor
+    private func fetchStocks(urlString: String) async throws {
+        let (response, statusCode) = try await NetworkManager.shared.request(
+            urlString: urlString,
+            method: .get,
+            responseType: StockSearchResponse.self
+        )
 
-                    case .failure(let error):
-                        self.alertMessage = "Failed to get data: \(error.localizedDescription)"
-                        self.showAlert = true
-                    }
-                }
-
-                continuation.resume()
-            }
+        guard statusCode == 200, let data = response.data else {
+            showAlert = true
+            throw URLError(.badServerResponse)
         }
+
+        searchResults = data
     }
 }

@@ -16,49 +16,64 @@ internal class BalanceChangeViewModel: ObservableObject {
     @Published var currentPage: Int = 1 {
         didSet {
             Task {
-                await self.loadData(shareholderType: self.holder.rawValue, isDecreased: self.isDecreased)
+                await loadData(shareholderType: self.holder.rawValue, isDecreased: self.isDecreased)
             }
         }
     }
-    @Published var isLoading: Bool = true
+    @Published var isLoading: Bool = false
     
     // MARK: Public Variables
-    var errorMessage: String = ""
+    var alertMessage: String = ""
     var statusDecrease: Bool = false
     var haveNext: Bool = false
     
+    // Function to load shareholder changes in stock
     func loadData(shareholderType holder: String, isDecreased change: String) async {
-        let url: String = BalanceChangeEndpoint.getBalance(
-            shareholderType: mapToCategory(holder),
-            change: change,
-            page: "\(currentPage)").urlString
-            
-        Task { @MainActor in
-            self.isLoading = true
+        guard TokenManager.shared.accessToken != nil else {
+            return
         }
         
-        NetworkManager.shared.fetch(from: url, responseType: BalanceChangeResponse.self) { result in
-            Task { @MainActor in
-                defer { self.isLoading = false }
+        guard var components = URLComponents(string: BalanceChangeEndpoint.getBalance.urlString) else {
+            self.alertMessage = "Invalid endpoint"
+            Task { @MainActor in self.showAlert = true }
+            return
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "type", value: mapToCategory(holder)),
+            URLQueryItem(name: "change", value: change),
+            URLQueryItem(name: "page", value: "\(currentPage)")
+        ]
+
+        guard let urlString = components.url?.absoluteString else {
+            self.alertMessage = "Failed to build URL"
+            Task { @MainActor in self.showAlert = true }
+            return
+        }
+        
+        Task { @MainActor in self.isLoading = true }
+        
+        Task { @MainActor in
+            defer { self.isLoading = false }
+            
+            do {
+                let (response, statusCode) = try await NetworkManager.shared.request(
+                    urlString: urlString,
+                    method: .get,
+                    responseType: BalanceChangeResponse.self
+                )
                 
-                switch result {
-                case .success(let (response, statusCode)):
-                    guard statusCode == 200 else {
-                        self.errorMessage = "Login Failed"
-                        self.showAlert = true
-                        return
-                    }
-                    
-                    self.statusDecrease = self.isDecreased == "Decrease" ? true : false
-                    self.haveNext = response.haveNext
-                    self.listStock = response.data ?? []
-                
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                    self.showAlert = true
+                guard statusCode == 200 else {
+                    throw NetworkError.unauthorizedError
                 }
                 
-                self.isLoading = false
+                self.statusDecrease = self.isDecreased == "Decrease" ? true : false
+                haveNext = response.haveNext
+                listStock = response.data ?? []
+                
+            } catch {
+                alertMessage = error.localizedDescription
+                showAlert = true
             }
         }
     }

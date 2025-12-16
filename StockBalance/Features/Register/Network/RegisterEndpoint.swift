@@ -6,7 +6,7 @@ enum RegisterEndpoint: EndpointProtocol {
     var path: String {
         switch self {
         case .register:
-            return ":8888/users/register"
+            return "/api/user/register"
         }
     }
 }

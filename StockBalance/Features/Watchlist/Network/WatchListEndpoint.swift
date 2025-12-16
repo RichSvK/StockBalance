@@ -7,7 +7,7 @@ enum WatchListEndpoint: EndpointProtocol {
     var path: String {
         switch self {
         case .getWatchlist:
-            return "/watchlist/"
+            return "/api/auth/watchlist"
         case .getStock:
             return "/stock/"
         }

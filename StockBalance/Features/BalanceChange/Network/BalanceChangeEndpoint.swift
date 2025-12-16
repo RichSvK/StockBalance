@@ -6,12 +6,12 @@
 //
 
 enum BalanceChangeEndpoint: EndpointProtocol {
-    case getBalance(shareholderType: String, change: String, page: String)
+    case getBalance
     
     var path: String {
         switch self {
-        case .getBalance(let shareholderType, let change, let page):
-            return "/api/balance/change?type=\(shareholderType)&change=\(change)&page=\(page)"
+        case .getBalance:
+            return "/api/auth/balance/change"
         }
     }
 }

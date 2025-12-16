@@ -7,109 +7,40 @@ final class NetworkManager {
     
     /// Private initializer to prevent external instantiation
     private init() { }
-        
-    /// Perform a GET request to a given URL and decode the response into the specified Codable type.
-    func fetch<T: Decodable>(from urlString: String, responseType: T.Type, completion: @escaping (Result<(T, Int), Error>) -> Void) {
+    
+    func request<Response: Decodable>(
+        urlString: String,
+        method: HTTPMethod,
+        body: Encodable? = nil,
+        responseType: Response.Type
+    ) async throws -> (Response, Int) {
         guard let url = URL(string: urlString) else {
-            completion(.failure(NetworkError.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        if let token = UserDefaults.standard.string(forKey: "token"), !token.isEmpty {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        /// Sends the request
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            /// Handles any request error
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(NetworkError.noData))
-                return
-            }
-
-            /// Validates that response data exists
-            guard let data = data else {
-                completion(.failure(NetworkError.noData))
-                return
-            }
-            
-            if httpResponse.statusCode == 401 {
-                UserDefaults.standard.removeObject(forKey: "token")
-                completion(.failure(NetworkError.unauthorizedError))
-            }
-
-            /// Attempts to decode the JSON response
-            do {
-                let decoder = JSONDecoder()
-                
-                /// Decodes date fields using ISO 8601 format like "2024-06-24T15:00:00Z"
-                decoder.dateDecodingStrategy = .iso8601
-
-                let decodedResponse = try decoder.decode(T.self, from: data)
-                completion(.success((decodedResponse, httpResponse.statusCode)))
-            } catch {
-                completion(.failure(error))
-            }
-        }
-        
-        /// Starts the data task
-        task.resume()
-    }
-
-    /// Perform a POST request with an Encodable body.
-    func post<T: Decodable, U: Encodable>(to urlString: String, body: U, responseType: T.Type, completion: @escaping (Result<(T, Int), Error>) -> Void) {
-        guard let url = URL(string: urlString) else {
-            completion(.failure(NetworkError.invalidURL))
-            return
+            throw URLError(.badURL)
         }
 
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = method.rawValue
         
-        if let token = UserDefaults.standard.string(forKey: "token"), !token.isEmpty {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let token = TokenManager.shared.accessToken, !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
+        
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        do {
+        if let body {
             request.httpBody = try JSONEncoder().encode(body)
-        } catch {
-            completion(.failure(error))
-            return
         }
 
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
+        let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let data = data else {
-                completion(.failure(NetworkError.noData))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(NetworkError.noData))
-                return
-            }
-
-            do {
-                let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                completion(.success((decodedResponse, httpResponse.statusCode)))
-            } catch {
-                completion(.failure(error))
-            }
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
         }
 
-        task.resume()
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(Response.self, from: data)
+        return (decoded, httpResponse.statusCode)
     }
 }
