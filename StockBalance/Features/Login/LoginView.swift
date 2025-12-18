@@ -14,7 +14,8 @@ struct LoginView: View {
     var body: some View {
         VStack {
             Text("Login")
-                .font(.headline)
+                .font(.title)
+                .fontWeight(.bold)
                 .padding()
             
             TextField("email", text: $viewModel.email)
@@ -24,7 +25,8 @@ struct LoginView: View {
                 .padding()
                 .background(Color.secondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-            
+                .keyboardType(.asciiCapable)
+
             HStack {
                 Group {
                     if isPasswordVisible {
@@ -33,8 +35,12 @@ struct LoginView: View {
                         SecureField("Password", text: $viewModel.password)
                     }
                 }
-                .focused($isFocused, equals: .password)
+                .textContentType(.password)
+                .keyboardType(.asciiCapable)
+                .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .submitLabel(.done)
+                .focused($isFocused, equals: .password)
                 .padding()
                 .background(Color.secondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))

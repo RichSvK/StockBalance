@@ -27,7 +27,8 @@ struct RegisterView: View {
             }
 
             Text("Register")
-                .font(.headline)
+                .font(.title)
+                .fontWeight(.bold)
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
@@ -39,6 +40,7 @@ struct RegisterView: View {
                 .padding()
                 .background(Color.secondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .keyboardType(.asciiCapable)
 
             HStack {
                 Group {
@@ -48,8 +50,12 @@ struct RegisterView: View {
                         SecureField("Password", text: $viewModel.password)
                     }
                 }
-                .focused($isFocused, equals: .password)
+                .textContentType(.password)
+                .keyboardType(.asciiCapable)
+                .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .submitLabel(.done)
+                .focused($isFocused, equals: .password)
                 .padding()
                 .background(Color.secondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -67,6 +73,7 @@ struct RegisterView: View {
                 .padding()
                 .background(Color.secondary.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .keyboardType(.asciiCapable)
 
             Button("Register") {
                 Task {

@@ -31,6 +31,7 @@ struct SearchView<ViewModel: SearchableViewModel>: View {
                     viewModel.searchStocks()
                 }
                 .padding(.horizontal)
+                .keyboardType(.asciiCapable)
 
             if viewModel.isSearching {
                 ProgressView("Searching...")

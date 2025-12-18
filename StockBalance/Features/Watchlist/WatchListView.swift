@@ -26,6 +26,7 @@ struct WatchlistView: View {
                         .padding(10)
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
+                        .keyboardType(.asciiCapable)
                 }
                 
                 if viewModel.watchList.count != 0 {

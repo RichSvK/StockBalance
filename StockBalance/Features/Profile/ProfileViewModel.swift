@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 internal class ProfileViewModel: ObservableObject {
     // MARK: Published Variables
     @Published var showAlert: Bool = false
@@ -16,16 +17,15 @@ internal class ProfileViewModel: ObservableObject {
                 responseType: ProfileResponse.self
             )
             
-            Task { @MainActor in
-                guard statusCode == 200, let data = response.data else {
-                    alertMessage = response.message
-                    showAlert = true
-                    throw NetworkError.invalidResponse
-                }
-                userProfile = data
+            guard statusCode == 200, let data = response.data else {
+                throw NetworkError.server(message: response.message)
             }
+            
+            userProfile = data
         } catch {
             // Error
+            alertMessage = error.localizedDescription
+            showAlert = true
         }
     }
     

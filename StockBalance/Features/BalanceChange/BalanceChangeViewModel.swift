@@ -7,12 +7,12 @@
 
 import Foundation
 
+@MainActor
 internal class BalanceChangeViewModel: ObservableObject {
     // MARK: Published Variables
     @Published var isDecreased: String = "Decrease"
     @Published var holder: ShareholderCategory = .localID
     @Published var showAlert: Bool = false
-    @Published var listStock: [BalanceChangeData] = []
     @Published var currentPage: Int = 1 {
         didSet {
             Task {
@@ -23,6 +23,7 @@ internal class BalanceChangeViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     
     // MARK: Public Variables
+    var listStock: [BalanceChangeData] = []
     var alertMessage: String = ""
     var statusDecrease: Bool = false
     var haveNext: Bool = false
@@ -34,8 +35,8 @@ internal class BalanceChangeViewModel: ObservableObject {
         }
         
         guard var components = URLComponents(string: BalanceChangeEndpoint.getBalance.urlString) else {
-            self.alertMessage = "Invalid endpoint"
-            Task { @MainActor in self.showAlert = true }
+            alertMessage = "Invalid endpoint"
+            showAlert = true
             return
         }
 
@@ -46,36 +47,36 @@ internal class BalanceChangeViewModel: ObservableObject {
         ]
 
         guard let urlString = components.url?.absoluteString else {
-            self.alertMessage = "Failed to build URL"
-            Task { @MainActor in self.showAlert = true }
+            alertMessage = "Failed to build URL"
+            showAlert = true
             return
         }
         
-        Task { @MainActor in self.isLoading = true }
-        
-        Task { @MainActor in
-            defer { self.isLoading = false }
-            
-            do {
-                let (response, statusCode) = try await NetworkManager.shared.request(
-                    urlString: urlString,
-                    method: .get,
-                    responseType: BalanceChangeResponse.self
-                )
-                
-                guard statusCode == 200 else {
-                    throw NetworkError.unauthorizedError
-                }
-                
-                self.statusDecrease = self.isDecreased == "Decrease" ? true : false
-                haveNext = response.haveNext
-                listStock = response.data ?? []
-                
-            } catch {
-                alertMessage = error.localizedDescription
-                showAlert = true
-            }
+        await MainActor.run {
+            isLoading = true
         }
+        
+        do {
+            let (response, statusCode) = try await NetworkManager.shared.request(
+                urlString: urlString,
+                method: .get,
+                responseType: BalanceChangeResponse.self
+            )
+            
+            guard statusCode == 200 else {
+                throw NetworkError.invalidResponse
+            }
+            
+            statusDecrease = isDecreased == "Decrease" ? true : false
+            haveNext = response.haveNext
+            listStock = response.data ?? []
+            
+        } catch {
+            alertMessage = error.localizedDescription
+            showAlert = true
+        }
+        
+        isLoading = false
     }
     
     private func mapToCategory(_ text: String) -> String {
@@ -86,18 +87,14 @@ internal class BalanceChangeViewModel: ObservableObject {
 
     // Change page to previous or
     func changePage(isNext next: Bool) {
-        Task { @MainActor in
-            self.currentPage += (next ? 1 : -1)
-        }
+        currentPage += (next ? 1 : -1)
     }
     
     func convertNumber(of value: Double) -> Double {
-        return value * (self.statusDecrease ? -1 : 1)
+        return value * (statusDecrease ? -1 : 1)
     }
     
     func showData() {
-        Task { @MainActor in
-            self.currentPage = 1
-        }
+        currentPage = 1
     }
 }

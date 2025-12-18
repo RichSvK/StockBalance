@@ -8,7 +8,7 @@
 import Foundation
 
 internal class WatchListViewModel: ObservableObject, SearchableViewModel {
-    @Published private(set) var watchList: [String] = [
+    private(set) var watchList: [String] = [
         "SGRO",
         "YOII",
         "GUNA",
@@ -16,20 +16,31 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
         "BMRI",
         "ASII"
     ]
-    @Published private(set) var showAlert: Bool = false
+    private(set) var searchResults: [String] = []
     private(set) var alertMessage: String = ""
+
+    @Published private(set) var showAlert: Bool = false
     
     // MARK: SearchableViewModel Protocol Properties
     @Published var searchText: String = ""
-    @Published var searchResults: [String] = []
     @Published var isSearching: Bool = false
+    @Published var isLoading: Bool = false
     
     private var searchTask: Task<Void, Never>?
 
     // Fetch watchlist data
     func fetchWatchlist() async {
-        Task { @MainActor in self.watchList = [] }
-        guard TokenManager.shared.accessToken != nil else { return }
+        await MainActor.run {
+            watchList = []
+            isLoading = true
+        }
+        
+        guard TokenManager.shared.accessToken != nil else {
+            await MainActor.run {
+                isLoading = false
+            }
+            return
+        }
         
         do {
             let (response, statusCode) = try await NetworkManager.shared.request(
@@ -38,17 +49,23 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
                 responseType: WatchListResponse.self
             )
             
-            Task { @MainActor in
+            try await MainActor.run {
                 guard statusCode == 200 else {
-                    alertMessage = response.message
-                    self.showAlert = true
                     throw URLError(.badServerResponse)
                 }
         
-                self.watchList = response.stocks ?? []
+                watchList = response.stocks ?? []
             }
         } catch {
             // Error
+            await MainActor.run {
+                alertMessage = error.localizedDescription
+                showAlert = true
+            }
+        }
+        
+        await MainActor.run {
+            isLoading = false
         }
     }
     
@@ -103,7 +120,6 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
     }
     
     // Fetch Stocks
-    @MainActor
     private func fetchStocks(urlString: String) async throws {
         let (response, statusCode) = try await NetworkManager.shared.request(
             urlString: urlString,
@@ -111,11 +127,13 @@ internal class WatchListViewModel: ObservableObject, SearchableViewModel {
             responseType: StockSearchResponse.self
         )
 
-        guard statusCode == 200, let data = response.data else {
-            showAlert = true
-            throw URLError(.badServerResponse)
-        }
+        try await MainActor.run {
+            guard statusCode == 200, let data = response.data else {
+                showAlert = true
+                throw URLError(.badServerResponse)
+            }
 
-        searchResults = data
+            searchResults = data
+        }
     }
 }

@@ -9,7 +9,7 @@ enum WatchListEndpoint: EndpointProtocol {
         case .getWatchlist:
             return "/api/auth/watchlist"
         case .getStock:
-            return "/stock/"
+            return "/stock"
         }
     }
 }

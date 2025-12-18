@@ -1,23 +1,27 @@
 import SwiftUI
 
+@MainActor
 internal class StockBalanceViewModel: ObservableObject {
     // MARK: Published variables
-    @Published private var stockBalance: [StockBalance] = []
-    @Published private(set) var filteredBalance: [StockSeries] = []
+    private(set) var filteredBalance: [StockSeries] = []
     @Published var showAlert: Bool = false
     @Published var investorType: String = "All" {
         didSet {
             filterBalance()
+            
+            Task { @MainActor in
+                self.isLoading = false
+            }
         }
     }
-    
     @Published private(set) var isLoading: Bool = true
     
-    // MARK: Variable
+    // MARK: Public Variable
     var flattenedSeries: [StockSeries] = []
     var alertMessage: String = ""
     var stock: String = "BBCA"
     
+    private var stockBalance: [StockBalance] = []
     private var emptyCategories: [String] = []
     private lazy var propertyToCategory: [String: String] = [
         "localIS": "Insurance",
@@ -48,31 +52,30 @@ internal class StockBalanceViewModel: ObservableObject {
     }
     
     func fetchStockBalance() async {
-        Task { @MainActor in isLoading = true }
+        isLoading = true
+        
         let url = "\(BalanceEndpoint.getStockBalance.urlString)/\(stock)"
         
-        Task { @MainActor in
-            defer { isLoading = false }
-
-            do {
-                let (response, statusCode) = try await NetworkManager.shared.request(
-                    urlString: url,
-                    method: .get,
-                    responseType: StockResponse.self)
-                
-                guard statusCode == 200 else {
-                    alertMessage = response.message
-                    showAlert = true
-                    throw NetworkError.invalidResponse
-                }
-
-                stockBalance = response.data
-                emptyCategories = findEmptyCategories(in: stockBalance)
-                filterBalance()
-            } catch {
-                // Error
+        do {
+            let (response, statusCode) = try await NetworkManager.shared.request(
+                urlString: url,
+                method: .get,
+                responseType: StockResponse.self)
+            
+            guard statusCode == 200 else {
+                throw NetworkError.server(message: response.message)
             }
+
+            stockBalance = response.data
+            emptyCategories = findEmptyCategories(in: stockBalance)
+            filterBalance()
+        } catch {
+            // Error
+            alertMessage = error.localizedDescription
+            showAlert = true
         }
+        
+        isLoading = false
     }
     
     func findEmptyCategories(in stockBalances: [StockBalance]) -> [String] {
@@ -93,17 +96,17 @@ internal class StockBalanceViewModel: ObservableObject {
     private func filterBalance() {
         switch investorType {
         case "All":
-            self.filteredBalance = stockBalance.flatMap {
+            filteredBalance = stockBalance.flatMap {
                 extractSeries(from: $0, exclude: emptyCategories, includeSummary: true)
             }
-            self.flattenedSeries = self.filteredBalance
+            flattenedSeries = filteredBalance
             
         default:
-            self.filteredBalance = stockBalance.flatMap {
+            filteredBalance = stockBalance.flatMap {
                 extractSeries(from: $0, exclude: emptyCategories)
             }
             
-            self.flattenedSeries = self.filteredBalance.filter {$0.investorType == (self.investorType == "Domestic" ? 1 : 2)}
+            flattenedSeries = filteredBalance.filter {$0.investorType == (investorType == "Domestic" ? 1 : 2)}
         }
     }
     
@@ -153,25 +156,22 @@ internal class StockBalanceViewModel: ObservableObject {
     }
     
     // MARK: Watchlist
-    @Published private(set) var isWatchList = false
+    private(set) var isWatchList = false
     @Published private(set) var isUpdating = false
     
     // Function to update watchlist
     func updateWatchlist() {
         guard TokenManager.shared.accessToken != nil else {
-            Task { @MainActor in
-                self.alertMessage = NetworkError.notLoggedIn.errorDescription ?? "You are not logged in"
-                self.showAlert = true
-            }
-            
+            alertMessage = NetworkError.notLoggedIn.errorDescription ?? "You are not logged in"
+            showAlert = true
             return
         }
         
         guard !isUpdating else { return }
         
         isUpdating = true
-        
-        Task { @MainActor in
+
+        Task {
             do {
                 if isWatchList {
                     try await removeWatchlist()
@@ -180,12 +180,11 @@ internal class StockBalanceViewModel: ObservableObject {
                 }
                 
                 isWatchList.toggle()
-                
             } catch {
                 // Error
             }
             
-            self.showAlert = true
+            showAlert = true
             isUpdating = false
         }
     }
@@ -200,34 +199,18 @@ internal class StockBalanceViewModel: ObservableObject {
             responseType: WatchlistResponse.self
         )
         
-        self.alertMessage = response.message
+        alertMessage = response.message
         guard statusCode == 201 else { throw URLError(.badServerResponse) }
     }
     
     private func removeWatchlist() async throws {
-        guard var components = URLComponents(string: BalanceEndpoint.addWatchlist.urlString) else {
-            self.alertMessage = "Invalid endpoint"
-            self.showAlert = true
-            return
-        }
-        
-        components.queryItems = [
-            URLQueryItem(name: "stock", value: stock)
-        ]
-        
-        guard let urlString = components.url?.absoluteString else {
-            self.alertMessage = "Failed to build URL"
-            self.showAlert = true
-            return
-        }
-        
         let (response, statusCode) = try await NetworkManager.shared.request(
-            urlString: urlString,
+            urlString: BalanceEndpoint.removeWatchlist(stock).urlString,
             method: .delete,
             responseType: WatchlistResponse.self
         )
         
-        self.alertMessage = response.message
+        alertMessage = response.message
         
         guard statusCode == 200 || statusCode == 204 else {
             throw URLError(.badServerResponse)

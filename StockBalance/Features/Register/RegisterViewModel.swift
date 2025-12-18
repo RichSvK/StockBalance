@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 internal class RegisterViewModel: ObservableObject {
     // MARK: Published Variables
     @Published var showAlert: Bool = false
@@ -22,16 +23,17 @@ internal class RegisterViewModel: ObservableObject {
                 responseType: RegisterResponse.self
             )
             
-            Task { @MainActor in
-                guard statusCode == 200 else {
-                    alertMessage = response.message
-                    showAlert = true
-                    throw NetworkError.invalidResponse
-                }
+            guard statusCode == 200 else {
+                throw NetworkError.server(message: response.message)
+            }
+            
+            await MainActor.run {
                 registrationSuccess = true
             }
         } catch {
             // Error
+            alertMessage = error.localizedDescription
+            showAlert = true
         }
     }
 }
