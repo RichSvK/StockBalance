@@ -17,7 +17,7 @@ final class NetworkManager {
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
@@ -30,17 +30,29 @@ final class NetworkManager {
         if let body {
             request.httpBody = try JSONEncoder().encode(body)
         }
-
+        
         let (data, response) = try await URLSession.shared.data(for: request)
-
+        
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+        
+        switch httpResponse.statusCode {
+        case 200..<300:
+            let decoded = try decoder.decode(Response.self, from: data)
+            return (decoded, httpResponse.statusCode)
 
-        let decoded = try decoder.decode(Response.self, from: data)
-        return (decoded, httpResponse.statusCode)
+        case 401:
+            // Remove token
+            TokenManager.shared.clear()
+            throw NetworkError.unauthorized
+
+        default:
+            let error = try decoder.decode(ErrorResponse.self, from: data)
+            throw NetworkError.server(message: error.message)
+        }
     }
 }

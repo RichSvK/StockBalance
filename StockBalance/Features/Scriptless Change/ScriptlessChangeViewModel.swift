@@ -43,18 +43,13 @@ internal class ScriptlessChangeViewModel: ObservableObject {
         isLoading = true
         
         do {
-            let (response, statusCode) = try await NetworkManager.shared.request(
+            let (response, _) = try await NetworkManager.shared.request(
                 urlString: urlString,
                 method: .get,
                 responseType: ScriptlessChangeResponse.self
             )
             
-            guard statusCode == 200, let data = response.data else {
-                throw NetworkError.invalidResponse
-            }
-            
-            listStock = data
-
+            listStock = response.data
         } catch {
             alertMessage = error.localizedDescription
             showAlert = true

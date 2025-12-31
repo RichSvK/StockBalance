@@ -90,6 +90,7 @@ struct LoginView: View {
         } message: {
             Text(viewModel.alertMessage)
         }
+        .onTapGesture { isFocused = nil }
     }
 }
 

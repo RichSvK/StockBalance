@@ -46,9 +46,7 @@ struct SearchView<ViewModel: SearchableViewModel>: View {
                     Section(header: Text("Results")) {
                         ForEach(viewModel.searchResults, id: \.self) { item in
                             NavigationLink {
-                                StockBalanceView(
-                                    viewModel: StockBalanceViewModel(stock: item)
-                                )
+                                StockBalanceView(viewModel: StockBalanceViewModel(stock: item))
                             } label: {
                                 Text(item)
                                     .font(.headline)

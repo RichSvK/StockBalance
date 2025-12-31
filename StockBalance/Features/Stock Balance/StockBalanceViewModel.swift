@@ -2,48 +2,92 @@ import SwiftUI
 
 @MainActor
 internal class StockBalanceViewModel: ObservableObject {
+    // MARK: Models
+    struct CategoryMoMDiff: Identifiable {
+        let id = UUID()
+        let category: String
+        let value: Double
+    }
+    
+    private struct BalanceField {
+        let key: String
+        let keyPath: KeyPath<StockBalance, UInt64>
+        let investorType: InvestorType
+        let category: InvestorCategory
+    }
+    
     // MARK: Published variables
-    private(set) var filteredBalance: [StockSeries] = []
     @Published var showAlert: Bool = false
-    @Published var investorType: String = "All" {
+    @Published var investorType: InvestorType = .all {
         didSet {
             filterBalance()
-            
-            Task { @MainActor in
-                self.isLoading = false
-            }
+            isLoading = false
         }
     }
     @Published private(set) var isLoading: Bool = true
-    
-    // MARK: Public Variable
-    var flattenedSeries: [StockSeries] = []
+    @Published private(set) var isUpdating = false
+
+    // MARK: Public Read Only
+    private(set) var filteredBalance: [StockSeries] = []
+    private(set) var flattenedSeries: [StockSeries] = []
+    private(set) var isWatchList = false
+
+    // MARK: Public Variables
     var alertMessage: String = ""
     var stock: String = "BBCA"
     
+    // MARK: Internal Data
     private var stockBalance: [StockBalance] = []
     private var emptyCategories: [String] = []
-    private lazy var propertyToCategory: [String: String] = [
-        "localIS": "Insurance",
-        "localCP": "Corporate",
-        "localPF": "Pension Fund",
-        "localIB": "Bank",
-        "localID": "Individual",
-        "localMF": "Mutual Fund",
-        "localSC": "Securities",
-        "localFD": "Foundation",
-        "localOT": "Other",
-        
-        "foreignIS": "Insurance",
-        "foreignCP": "Corporate",
-        "foreignPF": "Pension Fund",
-        "foreignIB": "Bank",
-        "foreignID": "Individual",
-        "foreignMF": "Mutual Fund",
-        "foreignSC": "Securities",
-        "foreignFD": "Foundation",
-        "foreignOT": "Other"
+    
+    private lazy var balanceFields: [BalanceField] = [
+        .init(key: "localIS", keyPath: \.localIS, investorType: .domestic, category: .insurance),
+        .init(key: "localCP", keyPath: \.localCP, investorType: .domestic, category: .corporate),
+        .init(key: "localPF", keyPath: \.localPF, investorType: .domestic, category: .pensionFund),
+        .init(key: "localIB", keyPath: \.localIB, investorType: .domestic, category: .bank),
+        .init(key: "localID", keyPath: \.localID, investorType: .domestic, category: .individual),
+        .init(key: "localMF", keyPath: \.localMF, investorType: .domestic, category: .mutualFund),
+        .init(key: "localSC", keyPath: \.localSC, investorType: .domestic, category: .securities),
+        .init(key: "localFD", keyPath: \.localFD, investorType: .domestic, category: .foundation),
+        .init(key: "localOT", keyPath: \.localOT, investorType: .domestic, category: .other),
+
+        .init(key: "foreignIS", keyPath: \.foreignIS, investorType: .foreign, category: .insurance),
+        .init(key: "foreignCP", keyPath: \.foreignCP, investorType: .foreign, category: .corporate),
+        .init(key: "foreignPF", keyPath: \.foreignPF, investorType: .foreign, category: .pensionFund),
+        .init(key: "foreignIB", keyPath: \.foreignIB, investorType: .foreign, category: .bank),
+        .init(key: "foreignID", keyPath: \.foreignID, investorType: .foreign, category: .individual),
+        .init(key: "foreignMF", keyPath: \.foreignMF, investorType: .foreign, category: .mutualFund),
+        .init(key: "foreignSC", keyPath: \.foreignSC, investorType: .foreign, category: .securities),
+        .init(key: "foreignFD", keyPath: \.foreignFD, investorType: .foreign, category: .foundation),
+        .init(key: "foreignOT", keyPath: \.foreignOT, investorType: .foreign, category: .other)
     ]
+
+    var categoryMonthOverMonthDiff: [CategoryMoMDiff] {
+        guard stockBalance.count >= 2 else { return [] }
+
+        let current = stockBalance[0]
+        let previous = stockBalance[1]
+
+        let applicableFields = balanceFields.filter {
+            investorType == .all || $0.investorType == investorType
+        }
+
+        var diffByCategory: [String: Double] = [:]
+
+        for field in applicableFields {
+            let currentValue = Double(current[keyPath: field.keyPath])
+            let previousValue = Double(previous[keyPath: field.keyPath])
+
+            guard previousValue > 0 else { continue }
+
+            let diff = (currentValue - previousValue) / previousValue * 100
+            diffByCategory[field.category.rawValue, default: 0] += diff
+        }
+
+        return diffByCategory
+            .map { CategoryMoMDiff(category: $0.key, value: $0.value) }
+            .sorted { $0.value > $1.value }
+    }
     
     // MARK: - Init
     init(stock: String, isWatchlist: Bool = false) {
@@ -53,14 +97,13 @@ internal class StockBalanceViewModel: ObservableObject {
     
     func fetchStockBalance() async {
         isLoading = true
-        
-        let url = "\(BalanceEndpoint.getStockBalance.urlString)/\(stock)"
-        
+                
         do {
             let (response, statusCode) = try await NetworkManager.shared.request(
-                urlString: url,
+                urlString: BalanceEndpoint.getStockBalance(stock).urlString,
                 method: .get,
-                responseType: StockResponse.self)
+                responseType: StockResponse.self
+            )
             
             guard statusCode == 200 else {
                 throw NetworkError.server(message: response.message)
@@ -95,7 +138,7 @@ internal class StockBalanceViewModel: ObservableObject {
     
     private func filterBalance() {
         switch investorType {
-        case "All":
+        case .all:
             filteredBalance = stockBalance.flatMap {
                 extractSeries(from: $0, exclude: emptyCategories, includeSummary: true)
             }
@@ -106,38 +149,42 @@ internal class StockBalanceViewModel: ObservableObject {
                 extractSeries(from: $0, exclude: emptyCategories)
             }
             
-            flattenedSeries = filteredBalance.filter {$0.investorType == (investorType == "Domestic" ? 1 : 2)}
+            flattenedSeries = filteredBalance.filter { $0.investorType == investorType.rawValue }
         }
     }
     
     private func extractSeries(from item: StockBalance, exclude categoriesToExclude: [String] = [], includeSummary: Bool = false) -> [StockSeries] {
         let rawSeries: [RawSeries] = [
-            RawSeries(value: item.localIS, investorType: 1, category: "localIS"),
-            RawSeries(value: item.localCP, investorType: 1, category: "localCP"),
-            RawSeries(value: item.localPF, investorType: 1, category: "localPF"),
-            RawSeries(value: item.localIB, investorType: 1, category: "localIB"),
-            RawSeries(value: item.localID, investorType: 1, category: "localID"),
-            RawSeries(value: item.localMF, investorType: 1, category: "localMF"),
-            RawSeries(value: item.localSC, investorType: 1, category: "localSC"),
-            RawSeries(value: item.localFD, investorType: 1, category: "localFD"),
-            RawSeries(value: item.localOT, investorType: 1, category: "localOT"),
+            RawSeries(value: item.localIS, investorType: 1, category: .insurance),
+            RawSeries(value: item.localCP, investorType: 1, category: .corporate),
+            RawSeries(value: item.localPF, investorType: 1, category: .pensionFund),
+            RawSeries(value: item.localIB, investorType: 1, category: .bank),
+            RawSeries(value: item.localID, investorType: 1, category: .individual),
+            RawSeries(value: item.localMF, investorType: 1, category: .mutualFund),
+            RawSeries(value: item.localSC, investorType: 1, category: .securities),
+            RawSeries(value: item.localFD, investorType: 1, category: .foundation),
+            RawSeries(value: item.localOT, investorType: 1, category: .other),
             
-            RawSeries(value: item.foreignIS, investorType: 2, category: "foreignIS"),
-            RawSeries(value: item.foreignCP, investorType: 2, category: "foreignCP"),
-            RawSeries(value: item.foreignPF, investorType: 2, category: "foreignPF"),
-            RawSeries(value: item.foreignIB, investorType: 2, category: "foreignIB"),
-            RawSeries(value: item.foreignID, investorType: 2, category: "foreignID"),
-            RawSeries(value: item.foreignMF, investorType: 2, category: "foreignMF"),
-            RawSeries(value: item.foreignSC, investorType: 2, category: "foreignSC"),
-            RawSeries(value: item.foreignFD, investorType: 2, category: "foreignFD"),
-            RawSeries(value: item.foreignOT, investorType: 2, category: "foreignOT")
+            RawSeries(value: item.foreignIS, investorType: 2, category: .insurance),
+            RawSeries(value: item.foreignCP, investorType: 2, category: .corporate),
+            RawSeries(value: item.foreignPF, investorType: 2, category: .pensionFund),
+            RawSeries(value: item.foreignIB, investorType: 2, category: .bank),
+            RawSeries(value: item.foreignID, investorType: 2, category: .individual),
+            RawSeries(value: item.foreignMF, investorType: 2, category: .mutualFund),
+            RawSeries(value: item.foreignSC, investorType: 2, category: .securities),
+            RawSeries(value: item.foreignFD, investorType: 2, category: .foundation),
+            RawSeries(value: item.foreignOT, investorType: 2, category: .other)
         ]
         
         let detailed = rawSeries.compactMap { series -> StockSeries? in
-            guard !categoriesToExclude.contains(series.category) else { return nil }
+            guard !categoriesToExclude.contains(series.category.rawValue) else { return nil }
             
-            return StockSeries(date: item.date, value: Double(series.value) / Double(item.listedShares) * 100,
-                               category: propertyToCategory[series.category] ?? "", investorType: series.investorType)
+            return StockSeries(
+                date: item.date,
+                value: Double(series.value) / Double(item.listedShares) * 100,
+                category: series.category.rawValue,
+                investorType: series.investorType
+            )
         }
         
         if includeSummary {
@@ -154,11 +201,7 @@ internal class StockBalanceViewModel: ObservableObject {
         
         return detailed
     }
-    
-    // MARK: Watchlist
-    private(set) var isWatchList = false
-    @Published private(set) var isUpdating = false
-    
+        
     // Function to update watchlist
     func updateWatchlist() {
         guard TokenManager.shared.accessToken != nil else {
@@ -222,5 +265,5 @@ internal class StockBalanceViewModel: ObservableObject {
 private struct RawSeries {
     let value: UInt64
     let investorType: Int
-    let category: String
+    let category: InvestorCategory
 }

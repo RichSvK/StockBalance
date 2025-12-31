@@ -57,15 +57,11 @@ internal class BalanceChangeViewModel: ObservableObject {
         }
         
         do {
-            let (response, statusCode) = try await NetworkManager.shared.request(
+            let (response, _) = try await NetworkManager.shared.request(
                 urlString: urlString,
                 method: .get,
                 responseType: BalanceChangeResponse.self
             )
-            
-            guard statusCode == 200 else {
-                throw NetworkError.invalidResponse
-            }
             
             statusDecrease = isDecreased == "Decrease" ? true : false
             haveNext = response.haveNext

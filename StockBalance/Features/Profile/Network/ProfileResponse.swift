@@ -1,9 +1,8 @@
 import Foundation
 
 struct ProfileResponse: Decodable {
-    let message: String
-    let time: String
-    let data: Profile?
+    let username: String
+    let email: String
 }
 
 struct Profile: Decodable {

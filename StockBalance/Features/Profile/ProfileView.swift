@@ -2,11 +2,12 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel: ProfileViewModel = ProfileViewModel()
-
+    @AppStorage("token") var token: String = ""
+    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             Group {
-                if TokenManager.shared.accessToken == nil || viewModel.userProfile.username == "" {
+                if token.isEmpty || viewModel.userProfile.username == "" {
                     LoginView()
                 } else {
                     VStack(alignment: .center) {

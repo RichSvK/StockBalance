@@ -1,7 +1,6 @@
 import Foundation
 
 struct StockResponse: Decodable {
-    let code: Int
     let message: String
     let data: [StockBalance]
 }

@@ -23,11 +23,12 @@ internal class LoginViewModel: ObservableObject {
                 responseType: LoginResponse.self
             )
             
-            guard statusCode == 200, let token = response.data?.token, !token.isEmpty else {
+            guard statusCode == 200, !response.token.isEmpty else {
+                TokenManager.shared.clear()
                 throw NetworkError.server(message: response.message)
             }
             
-            TokenManager.shared.save(token: token)
+            TokenManager.shared.save(token: response.token)
         } catch {
             alertMessage = error.localizedDescription
             showAlert = true

@@ -10,7 +10,7 @@ import SwiftUI
 enum NetworkError: Error, LocalizedError {
     case invalidURL
     case noData
-    case unauthorizedError
+    case unauthorized
     case invalidResponse
     case notLoggedIn
     case server(message: String)
@@ -19,10 +19,14 @@ enum NetworkError: Error, LocalizedError {
         switch self {
         case .invalidURL: return "Invalid URL"
         case .noData: return "No data in server"
-        case .unauthorizedError: return "Unauthorized"
+        case .unauthorized: return "Unauthorized"
         case .invalidResponse: return "Invalid server response"
         case .notLoggedIn: return "You are not logged in. Please sign in to continue."
         case .server(let message): return message
         }
     }
+}
+
+struct ErrorResponse: Decodable {
+    let message: String
 }

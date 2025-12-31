@@ -11,17 +11,14 @@ internal class ProfileViewModel: ObservableObject {
 
     func getUserProfile() async {
         do {
-            let (response, statusCode) = try await NetworkManager.shared.request(
+            let (response, _) = try await NetworkManager.shared.request(
                 urlString: ProfileEndpoint.getProfile.urlString,
                 method: .get,
                 responseType: ProfileResponse.self
             )
             
-            guard statusCode == 200, let data = response.data else {
-                throw NetworkError.server(message: response.message)
-            }
+            userProfile = Profile(username: response.username, email: response.email)
             
-            userProfile = data
         } catch {
             // Error
             alertMessage = error.localizedDescription

@@ -19,9 +19,9 @@ struct StockBalanceView: View {
                     .padding(.horizontal)
                 
                 Picker("Chart Type", selection: $viewModel.investorType) {
-                    Text("All").tag("All")
-                    Text("Domestic").tag("Domestic")
-                    Text("Foreign").tag("Foreign")
+                    ForEach(InvestorType.allCases, id: \.self) { type in
+                        Text(type.title).tag(type)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .padding(.bottom, 16)
@@ -36,6 +36,24 @@ struct StockBalanceView: View {
                 } else {
                     StockChart(series: viewModel.flattenedSeries)
                 }
+                
+                VStack(alignment: .center, spacing: 8) {
+                    Text("Monthly Change in Ownership (%)")
+                        .font(.headline)
+
+                    VStack(spacing: 6) {
+                        ForEach(viewModel.categoryMonthOverMonthDiff) { item in
+                            HStack {
+                                Text(item.category)
+                                Spacer()
+                                Text(item.value.formatted(.number.precision(.fractionLength(2))) + "%")
+                                    .foregroundColor(item.value < 0 ? .red : .green)
+                            }
+                            Divider()
+                        }
+                    }
+                }
+                .padding(.top, 16)
             }
             .padding()
         }

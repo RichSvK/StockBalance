@@ -1,9 +1,8 @@
 import Foundation
 
 struct ScriptlessChangeResponse: Decodable {
-    let code: Int
     let message: String
-    let data: [ScriptlessChangeData]?
+    let data: [ScriptlessChangeData]
 }
 
 struct ScriptlessChangeData: Decodable, Hashable {
