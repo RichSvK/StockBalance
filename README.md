@@ -39,8 +39,8 @@ Software used in developing this program:
 3. Stock Balance Chart <br>
    - The **Stock Balance Chart** view displays stock ownership of the selected stock
    - Users can add stock to watchlist or remove stock from watchlist if they are logged in.
-   <img width="200" height="534" alt="Domestic and Foreign Ownership" src="https://github.com/user-attachments/assets/9d41ebe1-2360-44c6-9e24-21be944e16d1" />
-   <img width="200" height="534" alt="Detailed Ownership" src="https://github.com/user-attachments/assets/224fa74a-1878-4713-80aa-4c96add20a6b" />
+     <img width="200" height="534" alt="image" src="https://github.com/user-attachments/assets/27563249-94ff-4a86-ba20-bb038220d307" />
+     <img width="200" height="534" alt="image" src="https://github.com/user-attachments/assets/06a99cc4-2442-402f-817c-42b55cd5844e" />
 
 5. Scriptless Change <br>
    - The **Scriptless Change** view displays list of stock with changes in the number of scriptless shares over the past months.
