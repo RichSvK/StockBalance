@@ -62,6 +62,35 @@ internal class StockBalanceViewModel: ObservableObject {
         .init(key: "foreignOT", keyPath: \.foreignOT, investorType: .foreign, category: .other)
     ]
 
+    private let investorLabelToCategory: [String: String] = [
+        "Local IS": "Insurance",
+        "Foreign IS": "Insurance",
+
+        "Local CP": "Corporate",
+        "Foreign CP": "Corporate",
+
+        "Local PF": "Pension Fund",
+        "Foreign PF": "Pension Fund",
+
+        "Local IB": "Bank",
+        "Foreign IB": "Bank",
+
+        "Local ID": "Individual",
+        "Foreign ID": "Individual",
+
+        "Local MF": "Mutual Fund",
+        "Foreign MF": "Mutual Fund",
+
+        "Local SC": "Securities",
+        "Foreign SC": "Securities",
+
+        "Local FD": "Foundation",
+        "Foreign FD": "Foundation",
+
+        "Local OT": "Other",
+        "Foreign OT": "Other"
+    ]
+
     var categoryMonthOverMonthDiff: [CategoryMoMDiff] {
         guard stockBalance.count >= 2 else { return [] }
 
@@ -123,12 +152,12 @@ internal class StockBalanceViewModel: ObservableObject {
     
     func findEmptyCategories(in stockBalances: [StockBalance]) -> [String] {
         let categoryKeyPaths: [(String, KeyPath<StockBalance, UInt64>)] = [
-            ("localIS", \.localIS), ("localCP", \.localCP), ("localPF", \.localPF),
-            ("localIB", \.localIB), ("localID", \.localID), ("localMF", \.localMF),
-            ("localSC", \.localSC), ("localFD", \.localFD), ("localOT", \.localOT),
-            ("foreignIS", \.foreignIS), ("foreignCP", \.foreignCP), ("foreignPF", \.foreignPF),
-            ("foreignIB", \.foreignIB), ("foreignID", \.foreignID), ("foreignMF", \.foreignMF),
-            ("foreignSC", \.foreignSC), ("foreignFD", \.foreignFD), ("foreignOT", \.foreignOT)
+            ("Local IS", \.localIS), ("Local CP", \.localCP), ("Local PF", \.localPF),
+            ("Local IB", \.localIB), ("Local ID", \.localID), ("Local MF", \.localMF),
+            ("Local SC", \.localSC), ("Local FD", \.localFD), ("Local OT", \.localOT),
+            ("Foreign IS", \.foreignIS), ("Foreign CP", \.foreignCP), ("Foreign PF", \.foreignPF),
+            ("Foreign IB", \.foreignIB), ("Foreign ID", \.foreignID), ("Foreign MF", \.foreignMF),
+            ("Foreign SC", \.foreignSC), ("Foreign FD", \.foreignFD), ("Foreign OT", \.foreignOT)
         ]
         
         return categoryKeyPaths
@@ -155,25 +184,25 @@ internal class StockBalanceViewModel: ObservableObject {
     
     private func extractSeries(from item: StockBalance, exclude categoriesToExclude: [String] = [], includeSummary: Bool = false) -> [StockSeries] {
         let rawSeries: [RawSeries] = [
-            RawSeries(value: item.localIS, investorType: 1, category: .insurance),
-            RawSeries(value: item.localCP, investorType: 1, category: .corporate),
-            RawSeries(value: item.localPF, investorType: 1, category: .pensionFund),
-            RawSeries(value: item.localIB, investorType: 1, category: .bank),
-            RawSeries(value: item.localID, investorType: 1, category: .individual),
-            RawSeries(value: item.localMF, investorType: 1, category: .mutualFund),
-            RawSeries(value: item.localSC, investorType: 1, category: .securities),
-            RawSeries(value: item.localFD, investorType: 1, category: .foundation),
-            RawSeries(value: item.localOT, investorType: 1, category: .other),
+            RawSeries(value: item.localIS, investorType: 1, category: .localIS),
+            RawSeries(value: item.localCP, investorType: 1, category: .localCP),
+            RawSeries(value: item.localPF, investorType: 1, category: .localPF),
+            RawSeries(value: item.localIB, investorType: 1, category: .localIB),
+            RawSeries(value: item.localID, investorType: 1, category: .localID),
+            RawSeries(value: item.localMF, investorType: 1, category: .localMF),
+            RawSeries(value: item.localSC, investorType: 1, category: .localSC),
+            RawSeries(value: item.localFD, investorType: 1, category: .localFD),
+            RawSeries(value: item.localOT, investorType: 1, category: .localOT),
             
-            RawSeries(value: item.foreignIS, investorType: 2, category: .insurance),
-            RawSeries(value: item.foreignCP, investorType: 2, category: .corporate),
-            RawSeries(value: item.foreignPF, investorType: 2, category: .pensionFund),
-            RawSeries(value: item.foreignIB, investorType: 2, category: .bank),
-            RawSeries(value: item.foreignID, investorType: 2, category: .individual),
-            RawSeries(value: item.foreignMF, investorType: 2, category: .mutualFund),
-            RawSeries(value: item.foreignSC, investorType: 2, category: .securities),
-            RawSeries(value: item.foreignFD, investorType: 2, category: .foundation),
-            RawSeries(value: item.foreignOT, investorType: 2, category: .other)
+            RawSeries(value: item.foreignIS, investorType: 2, category: .foreignIS),
+            RawSeries(value: item.foreignCP, investorType: 2, category: .foreignCP),
+            RawSeries(value: item.foreignPF, investorType: 2, category: .foreignPF),
+            RawSeries(value: item.foreignIB, investorType: 2, category: .foreignIB),
+            RawSeries(value: item.foreignID, investorType: 2, category: .foreignID),
+            RawSeries(value: item.foreignMF, investorType: 2, category: .foreignMF),
+            RawSeries(value: item.foreignSC, investorType: 2, category: .foreignSC),
+            RawSeries(value: item.foreignFD, investorType: 2, category: .foreignFD),
+            RawSeries(value: item.foreignOT, investorType: 2, category: .foreignOT  )
         ]
         
         let detailed = rawSeries.compactMap { series -> StockSeries? in
@@ -182,7 +211,7 @@ internal class StockBalanceViewModel: ObservableObject {
             return StockSeries(
                 date: item.date,
                 value: Double(series.value) / Double(item.listedShares) * 100,
-                category: series.category.rawValue,
+                category: investorLabelToCategory[series.category.rawValue] ?? series.category.rawValue,
                 investorType: series.investorType
             )
         }
@@ -265,5 +294,5 @@ internal class StockBalanceViewModel: ObservableObject {
 private struct RawSeries {
     let value: UInt64
     let investorType: Int
-    let category: InvestorCategory
+    let category: ShareholderCategory
 }
