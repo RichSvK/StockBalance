@@ -5,8 +5,9 @@ struct ScriptlessChangeView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 12) {
+            VStack(spacing: 12) {
                 headerSection
+            
                 separator
 
                 contentSection
@@ -27,7 +28,68 @@ struct ScriptlessChangeView: View {
             Text("Scriptless Change")
                 .font(.title)
                 .fontWeight(.bold)
+            
+            // Date Range
+            HStack(spacing: 4) {
+                Picker("", selection: $viewModel.startMonth) {
+                    ForEach(viewModel.months, id: \.self) { month in
+                        Text(viewModel.shortMonthSymbols[month - 1])
+                            .font(.caption)
+                            .tag(month)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
 
+                Picker("", selection: $viewModel.startYear) {
+                    ForEach(viewModel.years, id: \.self) { year in
+                        Text(String(year))
+                            .font(.caption)
+                            .tag(year)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+
+                Image(systemName: "arrow.right")
+                    .font(.caption)
+                    .padding(.horizontal, 2)
+
+                Picker("", selection: $viewModel.endMonth) {
+                    ForEach(viewModel.months, id: \.self) { month in
+                        Text(viewModel.shortMonthSymbols[month - 1])
+                            .font(.caption)
+                            .tag(month)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+
+                Picker("", selection: $viewModel.endYear) {
+                    ForEach(viewModel.years, id: \.self) { year in
+                        Text(String(year))
+                            .font(.caption)
+                            .tag(year)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+            }
+            .fixedSize()
+            
+            Button(action: {
+                Task {
+                    await viewModel.fetchChanges()
+                }
+            }, label: {
+                Text("Show")
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                    .background(ColorToken.greenColor.toColor())
+                    .foregroundStyle(ColorToken.whiteBlackColor.toColor())
+                    .cornerRadius(10)
+            })
+            
             headerRow
         }
         .padding(.vertical, 8)
@@ -55,7 +117,7 @@ struct ScriptlessChangeView: View {
             
             Spacer()
             
-            // show percentage with 2 decimal places
+            // Show percentage with 2 decimal places
             Text("\(formatNumber(change))%")
                 .font(.callout)
                 .frame(width: 110, alignment: .trailing)

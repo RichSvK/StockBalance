@@ -5,11 +5,35 @@ internal class ScriptlessChangeViewModel: ObservableObject {
     @Published var showAlert: Bool = false
     @Published var isLoading: Bool = false
     
+    @Published var startMonth = 1
+    @Published var endMonth = 1
+    
+    @Published var startYear = 2026
+    @Published var endYear = 2026
+
+    let months = Array(1...12)
+    let years = Array(2025...2026)
+
+    let shortMonthSymbols = DateFormatter().shortMonthSymbols ?? []
+
     private(set) var listStock: [ScriptlessChangeData] = []
     var alertMessage: String = ""
     var startTime: String = ""
     var endTime: String = ""
+    
+    init() {
+        let currentDate = Date()
+        let calendar = Calendar.current
 
+        endMonth = calendar.component(.month, from: currentDate) - 1
+        endYear = calendar.component(.year, from: currentDate)
+        if endMonth == 0 { endMonth = 12; endYear -= 1 }
+
+        startMonth = endMonth - 1
+        startYear = endYear
+        if startMonth == 0 { startMonth = 12; startYear -= 1 }
+    }
+    
     func fetchChanges() async {
         guard TokenManager.shared.accessToken != nil else {
             alertMessage = NetworkError.notLoggedIn.errorDescription ?? "You are not logged in"
@@ -64,20 +88,8 @@ internal class ScriptlessChangeViewModel: ObservableObject {
     ///   - `startDate`: The start date string (two months before the current month)
     ///   - `endDate`: The end date string (one month before the current month)
     private func buildStartEndDates() -> (String, String) {
-        let currentDate = Date()
-        let calendar = Calendar.current
-
-        var prevMonth = calendar.component(.month, from: currentDate) - 1
-        var prevYear = calendar.component(.year, from: currentDate)
-        if prevMonth == 0 { prevMonth = 12; prevYear -= 1 }
-
-        var prevTwoMonth = prevMonth - 1
-        var prevTwoYear = prevYear
-        if prevTwoMonth == 0 { prevTwoMonth = 12; prevTwoYear -= 1 }
-
-        let start = String(prevTwoYear) + "-" + String(format: "%02d", prevTwoMonth) + "-01"
-        let end   = String(prevYear)     + "-" + String(format: "%02d", prevMonth)    + "-01"
-
+        let start = String(format: "%d-%02d-01", startYear, startMonth)
+        let end   = String(format: "%d-%02d-01", endYear, endMonth)
         return (start, end)
     }
 }
